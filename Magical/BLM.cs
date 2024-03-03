@@ -12,7 +12,7 @@ namespace RabbsRotations.Magical
 
         public override string GameVersion => "6.55";
         public override string RotationName => "Rabbs BLM";
-        public override string Description => "PvP Rotation for BLM";
+        public override string Description => "PvP Rabbs BLM";
         public override CombatType Type => CombatType.PvP;
         public override bool ShowStatus => true;
 

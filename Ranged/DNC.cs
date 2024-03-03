@@ -5,7 +5,7 @@ using System;
 namespace RabbsRotations.Ranged;
 
 [SourceCode(Path = "main/DefaultRotations/Ranged/DNC_Default.cs")]
-public sealed class DNC_Default : DNC_Base
+public sealed class DNC : DNC_Base
 {
     public override CombatType Type => CombatType.PvP;
 

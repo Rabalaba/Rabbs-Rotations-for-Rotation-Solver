@@ -8,10 +8,9 @@ namespace RabbsRotations.Magical;
 public sealed class RdmRotation : RDM_Base
 {
     public override string GameVersion => "6.55";
-
     public override string RotationName => "Rabbs RDM";
-    
-    public override CombatType Type => CombatType.Both;
+    public override string Description => "PvP Rabbs BLM";
+    public override CombatType Type => CombatType.PvP;
 
 
     static IBaseAction VerthunderStartUp { get; } = new BaseAction(ActionID.Verthunder);

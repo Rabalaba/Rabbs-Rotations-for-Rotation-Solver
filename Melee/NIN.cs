@@ -25,11 +25,8 @@ namespace RabbsRotations.Melee;
 public sealed class NinRotation : NIN_Base
 {
     public override string GameVersion => "6.55";
-
-    public override string RotationName => "Rabbs NIN";
-    
-    public override string Description => "Fixed the phantom click issue";
-    
+    public override string RotationName => "Rabbs NIN";   
+    public override string Description => "PVP and PVE Ninhja w/ both PVE openers(Check config)"; 
     public override CombatType Type => CombatType.Both;
 
 

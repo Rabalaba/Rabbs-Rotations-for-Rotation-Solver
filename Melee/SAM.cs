@@ -12,11 +12,10 @@ namespace RabbsRotations.Melee
 {
     public sealed class SAM_Default : SAM_Base
     {
-        public override CombatType Type => CombatType.Both;
-
+        public override CombatType Type => CombatType.PVE;
         public override string GameVersion => "6.55";
-
         public override string RotationName => "Rabbs Samurai";
+        public override string Description => "PVE Samurai w/ option for opener Grade8 Stength Pot(Check options)";
 
         #region Rotation Config
         protected override IRotationConfigSet CreateConfiguration() => base.CreateConfiguration()

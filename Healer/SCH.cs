@@ -10,14 +10,9 @@ namespace RabbsRotations.Healer
     [RotationDesc(ActionID.ChainStratagem)]
     public sealed class SchRotation : SCH_Base
     {
-        private readonly bool _cantSacredSoil = !HasAetherflow || SacredSoil.IsCoolingDown || SacredSoil.ElapsedAfter(2f);
-
         public override string GameVersion => "6.55";
-
-        public override string RotationName => "Rabbs Scholar";
-
-        public override string Description => "WIP";
-
+        public override string RotationName => "Rabbs SCH";
+        public override string Description => "PVP Rabbs SCH";
         public override CombatType Type => CombatType.PvP;
 
         public static IBaseAction PVP_Broil { get; } = new BaseAction(ActionID.PvP_Broil);

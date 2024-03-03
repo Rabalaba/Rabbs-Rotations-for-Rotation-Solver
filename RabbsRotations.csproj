@@ -57,8 +57,4 @@
     <PackageReference Include="RotationSolver.Basic" Version="3.4.14" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Ranged\" />
-  </ItemGroup>
-
 </Project>
