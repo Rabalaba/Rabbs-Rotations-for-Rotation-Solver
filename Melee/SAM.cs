@@ -23,7 +23,7 @@ namespace RabbsRotations.Melee
     {
         public override CombatType Type => CombatType.PvE;
         public override string GameVersion => "6.55";
-        public override string RotationName => "Rabbs Samurai Testin";
+        public override string RotationName => "Rabbs Samurai";
         public override string Description => "PVE Samurai w/ option for opener Grade8 Stength Pot(Check options)";
 
         #region Rotation Config
