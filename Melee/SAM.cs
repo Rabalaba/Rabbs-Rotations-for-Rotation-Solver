@@ -1,7 +1,16 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+﻿using Dalamud.Game.ClientState.JobGauge.Enums;
+using Dalamud.Game.ClientState.JobGauge.Types;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Gauge;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using Lumina.Data.Parsing;
 using RotationSolver.Basic.Configuration;
+using RotationSolver.Basic.Data;
+using Svg;
 using System;
 using System.Collections.Generic;
+using System.Drawing.Text;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,14 +21,15 @@ namespace RabbsRotations.Melee
 {
     public sealed class SAM_Default : SAM_Base
     {
-        public override CombatType Type => CombatType.PVE;
+        public override CombatType Type => CombatType.PvE;
         public override string GameVersion => "6.55";
-        public override string RotationName => "Rabbs Samurai";
+        public override string RotationName => "Rabbs Samurai Testin";
         public override string Description => "PVE Samurai w/ option for opener Grade8 Stength Pot(Check options)";
 
         #region Rotation Config
         protected override IRotationConfigSet CreateConfiguration() => base.CreateConfiguration()
-            .SetCombo(CombatType.PvE, "RotationSelection", 1, "Select which Opener to use.", "With Medicine", "Without Medicine");
+            .SetCombo(CombatType.PvE, "RotationSelection", 1, "Select which Opener to use.", "With Medicine", "Without Medicine")
+            .SetInt(CombatType.PvE, "KenkiwastePrevent", 50, "Use Kenki above.", min: 0, max: 85, speed: 5);
         #endregion
 
         #region Phase Logic
@@ -57,12 +67,49 @@ namespace RabbsRotations.Melee
         private bool OddBurstReady { get; set; }
         private bool EvenBurstReady { get; set; }
         private bool Flag { get; set; }
+        private static BaseAction FakeSenei { get; } = new(ActionID.Ikishoten);
+        private float SeneiCool => Ikishoten.IsCoolingDown ? 120 - FakeSenei.RecastTimeElapsed : 0;
+        internal static bool inOpener = false;
+        internal static bool inOddFiller = false;
+        internal static bool inEvenFiller = false;
+        internal static bool nonOpener = true;
+        internal static bool hasDied = false;
+        internal static bool fillerComplete = false;
+        internal static bool fastFillerReady = false;
+        //private static SAMGauge gauge { get; set; }
+        private bool IsThereABoss = HostileTargets.Any(p => p.IsBossFromTTK()) || HostileTargets.Any(p => p.IsBossFromIcon());
+
+        public static float GetDebuffRemainingTime(StatusID effectId)
+        {
+            // Define a small time step (e.g., 0.1 seconds)
+            const float timeStep = 0.1f;
+
+            // Maximum time to iterate (adjust based on expected effect duration)
+            const float maxTime = 120.0f; // Adjust this value as needed
+
+            // Iterate by time steps until WillStatusEnd returns true or maxTime is reached
+            float currentTime = 0.0f;
+            while (currentTime < maxTime && !HostileTarget.WillStatusEnd(currentTime, true, effectId))
+            {
+                currentTime += timeStep;
+            }
+
+            // If WillStatusEnd never returned true, reached maxTime
+            if (currentTime >= maxTime)
+            {
+                return 0.0f; // Indicate effect might be permanent or not applied
+            }
+
+            // Return the closest whole second (rounded down)
+            return currentTime;
+        }
         #endregion
 
         #region Countdown Logic
         protected override IAction CountDownAction(float remainTime)
         {
-            if (remainTime < 0.1f)
+            //var IsThereABoss = HostileTargets.Any(p => p.IsBossFromTTK()) || HostileTargets.Any(p => p.IsBossFromIcon());
+            if (remainTime < 0.1f && IsThereABoss)
             {
                 Flag = false;
                 OpenerHasFailed = false;
@@ -99,17 +146,15 @@ namespace RabbsRotations.Melee
         {
             act = default(IAction);
 
-            while (OpenerInProgress && (!OpenerHasFinished || !OpenerHasFailed))
+            while (OpenerInProgress)
             {
                 if (TimeSinceLastAction.TotalSeconds > 3.5f)
                 {
-                    OpenerHasFailed = true;
                     OpenerInProgress = false;
                     Openerstep = 0;
                 }
                 if (Player.IsDead)
                 {
-                    OpenerHasFailed = true;
                     OpenerInProgress = false;
                     Openerstep = 0;
                 }
@@ -171,8 +216,8 @@ namespace RabbsRotations.Melee
                             case 25:
                                 OpenerHasFinished = true;
                                 OpenerInProgress = false;
-                                EvenCooldownPhasestep = 0;
-                                CooldownPhaseInProgressEven = true;
+                                //EvenCooldownPhasestep = 0;
+                                //CooldownPhaseInProgressEven = true;
 
                                 break;
                         }
@@ -231,8 +276,8 @@ namespace RabbsRotations.Melee
                             case 24:
                                 OpenerHasFinished = true;
                                 OpenerInProgress = false;
-                                EvenCooldownPhasestep = 0;
-                                CooldownPhaseInProgressEven = true;
+                                //EvenCooldownPhasestep = 0;
+                                //CooldownPhaseInProgressEven = true;
 
                                 break;
                         }
@@ -258,11 +303,10 @@ namespace RabbsRotations.Melee
         {
             act = default(IAction);
 
-            while (CooldownPhaseInProgressOdd && (!CooldownPhaseOddHasFinished || !CooldownPhaseOddHasFailed))
+            while (CooldownPhaseInProgressOdd)
             {
                 if (TimeSinceLastAction.TotalSeconds > 3.5f || Player.IsDead)
                 {
-                    CooldownPhaseOddHasFailed = true;
                     CooldownPhaseInProgressOdd = false;
                     OddCooldownPhasestep = 0;
                 }
@@ -330,11 +374,10 @@ namespace RabbsRotations.Melee
         {
             act = default(IAction);
 
-            while (CooldownPhaseInProgressEven && (!CooldownPhaseEvenHasFinished || !CooldownPhaseEvenHasFailed))
+            while (CooldownPhaseInProgressEven)
             {
                 if (TimeSinceLastAction.TotalSeconds > 3.5f || Player.IsDead)
                 {
-                    CooldownPhaseEvenHasFailed = true;
                     CooldownPhaseInProgressEven = false;
                     EvenCooldownPhasestep = 0;
                 }
@@ -375,7 +418,6 @@ namespace RabbsRotations.Melee
                     case 16:
                         return CooldownPhaseStepEven(RecordActions?.FirstOrDefault().Action.RowId == Kasha.ID, Kasha.CanUse(out act, CanUseOption.MustUseEmpty));
                     case 17:
-                        CooldownPhaseEvenHasFinished = true;
                         CooldownPhaseInProgressEven = false;
                         OddMinuteBurstPhasestep = 0;
                         OddMinuteBurstPhaseInProgress = true;
@@ -402,11 +444,10 @@ namespace RabbsRotations.Melee
         {
             act = default(IAction);
 
-            while (OddMinuteBurstPhaseInProgress && (!OddMinuteBurstPhaseHasFinished || !OddMinuteBurstPhaseHasFailed))
+            while (OddMinuteBurstPhaseInProgress)
             {
                 if (TimeSinceLastAction.TotalSeconds > 3.5f || Player.IsDead)
                 {
-                    OddMinuteBurstPhaseHasFailed = true;
                     OddMinuteBurstPhaseInProgress = false;
                     OddMinuteBurstPhasestep = 0;
                 }
@@ -460,13 +501,12 @@ namespace RabbsRotations.Melee
         {
             act = default(IAction);
 
-            while (EvenMinuteBurstPhaseInProgress && (!EvenMinuteBurstPhaseHasFinished || !EvenMinuteBurstPhaseHasFailed))
+            while (EvenMinuteBurstPhaseInProgress)
             {
                 if (TimeSinceLastAction.TotalSeconds > 3.5f || Player.IsDead)
                 {
-                    EvenMinuteBurstPhaseHasFailed = true;
                     EvenMinuteBurstPhaseInProgress = false;
-                    Openerstep = 0;
+                    EvenMinuteBurstPhasestep = 0;
                 }
                 switch (EvenMinuteBurstPhasestep)
                 {
@@ -499,7 +539,6 @@ namespace RabbsRotations.Melee
                     case 13:
                         return EvenminutePhaseStep(RecordActions?.FirstOrDefault().Action.RowId == MidareSetsugekka.ID, MidareSetsugekka.CanUse(out act, CanUseOption.MustUseEmpty));
                     case 14:
-                        EvenMinuteBurstPhaseHasFinished = true;
                         EvenMinuteBurstPhaseInProgress = false;
                         EvenFillerPhasestep = 0;
                         EvenFillerPhaseInProgress = true;
@@ -552,8 +591,8 @@ namespace RabbsRotations.Melee
                             case 3:
                                 OddFillerPhaseHasFinished = true;
                                 OddFillerPhaseInProgress = false;
-                                OddCooldownPhasestep = 0;
-                                CooldownPhaseInProgressOdd = true;
+                                //OddCooldownPhasestep = 0;
+                                //CooldownPhaseInProgressOdd = true;
                                 break;
 
                         }
@@ -572,8 +611,8 @@ namespace RabbsRotations.Melee
                             case 4:
                                 OddFillerPhaseHasFinished = true;
                                 OddFillerPhaseInProgress = false;
-                                OddCooldownPhasestep = 0;
-                                CooldownPhaseInProgressOdd = true;
+                                //OddCooldownPhasestep = 0;
+                                //CooldownPhaseInProgressOdd = true;
                                 break;
 
                         }
@@ -596,8 +635,8 @@ namespace RabbsRotations.Melee
                             case 6:
                                 OddFillerPhaseHasFinished = true;
                                 OddFillerPhaseInProgress = false;
-                                OddCooldownPhasestep = 0;
-                                CooldownPhaseInProgressOdd = true;
+                                //OddCooldownPhasestep = 0;
+                                //CooldownPhaseInProgressOdd = true;
                                 break;
 
                         }
@@ -647,8 +686,8 @@ namespace RabbsRotations.Melee
                             case 3:
                                 EvenFillerPhaseHasFinished = true;
                                 EvenFillerPhaseInProgress = false;
-                                EvenCooldownPhasestep = 0;
-                                CooldownPhaseInProgressEven = true;
+                                //EvenCooldownPhasestep = 0;
+                                //CooldownPhaseInProgressEven = true;
                                 break;
 
                         }
@@ -667,8 +706,8 @@ namespace RabbsRotations.Melee
                             case 4:
                                 EvenFillerPhaseHasFinished = true;
                                 EvenFillerPhaseInProgress = false;
-                                EvenCooldownPhasestep = 0;
-                                CooldownPhaseInProgressEven = true;
+                                //EvenCooldownPhasestep = 0;
+                                //CooldownPhaseInProgressEven = true;
                                 break;
 
                         }
@@ -691,8 +730,8 @@ namespace RabbsRotations.Melee
                             case 6:
                                 EvenFillerPhaseHasFinished = true;
                                 EvenFillerPhaseInProgress = false;
-                                EvenCooldownPhasestep = 0;
-                                CooldownPhaseInProgressEven = true;
+                                //EvenCooldownPhasestep = 0;
+                                //CooldownPhaseInProgressEven = true;
                                 break;
 
                         }
@@ -717,17 +756,21 @@ namespace RabbsRotations.Melee
 
         #endregion
 
-        protected override bool GeneralGCD(out IAction act)
+        protected unsafe override bool GeneralGCD(out IAction act)
         {
 
             act = null;
+            var aState = FFXIVClientStructs.FFXIV.Client.Game.UI.UIState.Instance()->PlayerState;
+            var SkillSpeed = aState.Attributes[45];
+            uint SamFillerCombo = SkillSpeed <= 648 ? 2u : 3u;
             ActionID Adjsuted_Keishi = AdjustId(ActionID.TsubameGaeshi);
+            ActionID Adjsuted_Namikiri = AdjustId(ActionID.OgiNamikiri);
             var IsTargetBoss = HostileTarget?.IsBossFromTTK() ?? false;
             var IsTargetDying = HostileTarget?.IsDying() ?? false;
             int GCDsUntilBurst(uint gcdCount = 0u, float offset = 0f)
             {
                 int gcdsChecked = 0;
-                while (!TsubameGaeshi.WillHaveOneChargeGCD(gcdCount, offset))
+                while (!HissatsuSenei.WillHaveOneChargeGCD(gcdCount, offset))
                 {
                     gcdCount++;
                     gcdsChecked++;
@@ -766,243 +809,586 @@ namespace RabbsRotations.Melee
             {
                 return OddFillerPhase(out act);
             }
-
-            //what of not in any phase => need to realign to proper phase
-            if (!OpenerInProgress && !EvenMinuteBurstPhaseInProgress && !OddMinuteBurstPhaseInProgress && !CooldownPhaseInProgressOdd && !CooldownPhaseInProgressEven && !EvenFillerPhaseInProgress && !OddFillerPhaseInProgress && InCombat)
+            /*
+            if (IsThereABoss && Player.Level == 90)
             {
-                NoPhaseInProgess = true;
-            }
-
-            if (NoPhaseInProgess) //problem here because we aren't attacking if phase not defined
-            {
-
-                if (GCDsUntilBurst() <= 1 && SenCount == 3) // our burst abilities are ready... trying to figure out odd minute vs even
+                //what of not in any phase => need to realign to proper phase
+                if (!OpenerInProgress && !EvenMinuteBurstPhaseInProgress && !OddMinuteBurstPhaseInProgress && !CooldownPhaseInProgressOdd && !CooldownPhaseInProgressEven && !EvenFillerPhaseInProgress && !OddFillerPhaseInProgress && InCombat)
                 {
-                    if (HissatsuSenei.WillHaveOneChargeGCD(1))
-                    {
-                        EvenMinuteBurstPhasestep = 0;
-                        EvenMinuteBurstPhaseInProgress = true;
-                    }
-                    OddMinuteBurstPhasestep = 0;
-                    OddMinuteBurstPhaseInProgress = true;
+                    NoPhaseInProgess = true;
                 }
 
-                if (GCDsUntilBurst() <= 1 && SenCount < 3)  //burst is ready but we need sen first
+                if (NoPhaseInProgess) //problem here because we aren't attacking if phase not defined
                 {
-                    //Kasha combo(Ka) > Gekko(Getsu) combo > Yukikaze(Setsu) combo
-                    if (!HasKa)
+                    //lets align to burst its better that way, even burst has priority
+                    if (HissatsuSenei.WillHaveOneChargeGCD(2) || !HissatsuSenei.IsCoolingDown)
                     {
-                        if (Kasha.CanUse(out act)) return true;
-                        if (Shifu.CanUse(out act)) return true;
-                        if (Hakaze.CanUse(out act)) return true;
-
-                    }
-
-                    if (!HasGetsu)
-                    {
-                        if (Gekko.CanUse(out act)) return true;
-                        if (Jinpu.CanUse(out act)) return true;
-                        if (Hakaze.CanUse(out act)) return true;
-                    }
-
-                    if (!HasSetsu)
-                    {
-                        if (Yukikaze.CanUse(out act)) return true;
-                        if (Hakaze.CanUse(out act)) return true;
-                    }
-                    if (GCDsUntilBurst() > 1 && GCDsUntilBurst() <=18) //cooldown phase this will be true
-                    {
-                        if (!HissatsuSenei.WillHaveOneChargeGCD(22)) //odd burst this will be true if even burst is next one
+                        //even burst nned to eat sen to realign higabana
+                        if (SenCount == 3)
                         {
-                            if (GCDsUntilBurst() < 8)  //half way though cooldwon phase
-                            {
-                                if (SenCount == 3) //check if we can midare
-                                {
-                                    OddCooldownPhasestep = 8;  //the midare is step 8 (9th gcd since we count staring at 0
-                                    CooldownPhaseInProgressOdd = true;
-                                }
-                                //get us to 3 sen to allign to midare halfway point
-                                if (!HasKa)
-                                {
-                                    if (Kasha.CanUse(out act)) return true;
-                                    if (Shifu.CanUse(out act)) return true;
-                                    if (Hakaze.CanUse(out act)) return true;
-
-                                }
-
-                                if (!HasGetsu)
-                                {
-                                    if (Gekko.CanUse(out act)) return true;
-                                    if (Jinpu.CanUse(out act)) return true;
-                                    if (Hakaze.CanUse(out act)) return true;
-                                }
-
-                                if (!HasSetsu)
-                                {
-                                    if (Yukikaze.CanUse(out act)) return true;
-                                    if (Hakaze.CanUse(out act)) return true;
-                                }
-                            }
-                            if (GCDsUntilBurst() > 8 && SenCount !=3)  //cast gcds until halfway midare alignment
-                            {
-                                if (!HasKa)
-                                {
-                                    if (Kasha.CanUse(out act)) return true;
-                                    if (Shifu.CanUse(out act)) return true;
-                                    if (Hakaze.CanUse(out act)) return true;
-
-                                }
-
-                                if (!HasGetsu)
-                                {
-                                    if (Gekko.CanUse(out act)) return true;
-                                    if (Jinpu.CanUse(out act)) return true;
-                                    if (Hakaze.CanUse(out act)) return true;
-                                }
-
-                                if (!HasSetsu)
-                                {
-                                    if (Yukikaze.CanUse(out act)) return true;
-                                    if (Hakaze.CanUse(out act)) return true;
-                                }
-                            }
-                            if (GCDsUntilBurst() > 8 && SenCount == 3) //somehow we messed up but we have to midare to align now
-                            {
-                                if(MidareSetsugekka.CanUse(out act)) return true;  //consider using filler logic here to better align in future updates
-                            }
-
+                            EvenMinuteBurstPhasestep = 0;
+                            EvenMinuteBurstPhaseInProgress = true;
                         }
-                        if (HissatsuSenei.WillHaveOneChargeGCD(22)) //even burst this will be true if even burst is next one
+                        if (SenCount == 2 && HasSetsu && HasGetsu)
                         {
-                            if (GCDsUntilBurst() < 8)  //half way though cooldwon phase
-                            {
-                                if (SenCount == 3) //check if we can midare
-                                {
-                                    EvenCooldownPhasestep = 8;  //the midare is step 8 (9th gcd since we count staring at 0
-                                    CooldownPhaseInProgressEven = true;
-                                }
-                                //get us to 3 sen to allign to midare halfway point
-                                if (!HasKa)
-                                {
-                                    if (Kasha.CanUse(out act)) return true;
-                                    if (Shifu.CanUse(out act)) return true;
-                                    if (Hakaze.CanUse(out act)) return true;
-
-                                }
-
-                                if (!HasGetsu)
-                                {
-                                    if (Gekko.CanUse(out act)) return true;
-                                    if (Jinpu.CanUse(out act)) return true;
-                                    if (Hakaze.CanUse(out act)) return true;
-                                }
-
-                                if (!HasSetsu)
-                                {
-                                    if (Yukikaze.CanUse(out act)) return true;
-                                    if (Hakaze.CanUse(out act)) return true;
-                                }
-                            }
-                            if (GCDsUntilBurst() > 8 && SenCount != 3)  //cast gcds until halfway midare alignment
-                            {
-                                if (!HasKa)
-                                {
-                                    if (Kasha.CanUse(out act)) return true;
-                                    if (Shifu.CanUse(out act)) return true;
-                                    if (Hakaze.CanUse(out act)) return true;
-
-                                }
-
-                                if (!HasGetsu)
-                                {
-                                    if (Gekko.CanUse(out act)) return true;
-                                    if (Jinpu.CanUse(out act)) return true;
-                                    if (Hakaze.CanUse(out act)) return true;
-                                }
-
-                                if (!HasSetsu)
-                                {
-                                    if (Yukikaze.CanUse(out act)) return true;
-                                    if (Hakaze.CanUse(out act)) return true;
-                                }
-                            }
-                            if (GCDsUntilBurst() > 8 && SenCount == 3) //somehow we messed up but we have to midare to align now
-                            {
-                                if (MidareSetsugekka.CanUse(out act)) return true;  //consider using filler logic here to better align in future updates
-                            }
-
+                            OddCooldownPhasestep= 14;
+                            CooldownPhaseInProgressOdd= true;
                         }
+                        if(SenCount == 1 && HasSetsu)
+                        {
+                            OddCooldownPhasestep = 11;
+                            CooldownPhaseInProgressOdd = true;
+                        }
+                        OddCooldownPhasestep = 9;
+                        CooldownPhaseInProgressOdd = true;
 
                     }
-
-                    //only other condition is filler phase
-                    if (!HissatsuSenei.WillHaveOneChargeGCD(22)) // true for odd filler
+                    if (HissatsuSenei.WillHaveOneChargeGCD(19))
                     {
+                        //odd cooldown
+                        if (HissatsuSenei.WillHaveOneChargeGCD(10))
+                        {
+                            if (SenCount == 2 && HasSetsu && HasGetsu)
+                            {
+                                OddCooldownPhasestep = 14;
+                                CooldownPhaseInProgressOdd = true;
+                            }
+                            if (SenCount == 1 && HasSetsu)
+                            {
+                                OddCooldownPhasestep = 11;
+                                CooldownPhaseInProgressOdd = true;
+                            }
+                            OddCooldownPhasestep = 9;
+                            CooldownPhaseInProgressOdd = true;
+                        }
+                        if (SenCount == 3)
+                        {
+                            EvenMinuteBurstPhasestep = 8;
+                            EvenMinuteBurstPhaseInProgress = true;
+                        }
+                        if (SenCount == 2 && HasSetsu && HasGetsu)
+                        {
+                            OddCooldownPhasestep = 5;
+                            CooldownPhaseInProgressOdd = true;
+                        }
+                        if (SenCount == 1 && HasSetsu)
+                        {
+                            OddCooldownPhasestep = 2;
+                            CooldownPhaseInProgressOdd = true;
+                        }
+                        OddCooldownPhasestep = 0;
+                        CooldownPhaseInProgressOdd = true;
+                    }
+                    if (HissatsuSenei.WillHaveOneChargeGCD(19+SamFillerCombo))
+                    {
+                        //odd filler
                         OddFillerPhasestep = 0;
                         OddFillerPhaseInProgress = true;
                     }
+                    if (HissatsuSenei.WillHaveOneChargeGCD(28 + SamFillerCombo))
+                    {
+                        //odd burst
+                        if (SenCount == 3)
+                        {
+                            OddMinuteBurstPhasestep = 0;
+                            OddMinuteBurstPhaseInProgress = true;
+                        }
+                        if (SenCount == 2 && HasSetsu && HasGetsu)
+                        {
+                            EvenCooldownPhasestep = 14;
+                            CooldownPhaseInProgressEven = true;
+                        }
+                        if (SenCount == 1 && HasSetsu)
+                        {
+                            EvenCooldownPhasestep = 11;
+                            CooldownPhaseInProgressEven = true;
+                        }
+                        EvenCooldownPhasestep = 9;
+                        CooldownPhaseInProgressEven = true;
+                    }
+                    if (HissatsuSenei.WillHaveOneChargeGCD(45 + SamFillerCombo))
+                    {
+                        //even cooldown
+                        if (HissatsuSenei.WillHaveOneChargeGCD(36 + SamFillerCombo))
+                        {
+                            if (SenCount == 2 && HasSetsu && HasGetsu)
+                            {
+                                EvenCooldownPhasestep = 14;
+                                CooldownPhaseInProgressEven = true;
+                            }
+                            if (SenCount == 1 && HasSetsu)
+                            {
+                                EvenCooldownPhasestep = 11;
+                                CooldownPhaseInProgressEven = true;
+                            }
+                            EvenCooldownPhasestep = 9;
+                            CooldownPhaseInProgressEven = true;
+                        }
+                        if (SenCount == 3)
+                        {
+                            EvenMinuteBurstPhasestep = 8;
+                            EvenMinuteBurstPhaseInProgress = true;
+                        }
+                        if (SenCount == 2 && HasSetsu && HasGetsu)
+                        {
+                            EvenCooldownPhasestep = 5;
+                            CooldownPhaseInProgressEven = true;
+                        }
+                        if (SenCount == 1 && HasSetsu)
+                        {
+                            EvenCooldownPhasestep = 2;
+                            CooldownPhaseInProgressEven = true;
+                        }
+                        EvenCooldownPhasestep = 0;
+                        CooldownPhaseInProgressEven = true;
+                    }
+                    if (HissatsuSenei.WillHaveOneChargeGCD(45 + 2*SamFillerCombo))
+                    {
+                        //even filler
+                        EvenFillerPhasestep = 0;
+                        EvenFillerPhaseInProgress = true;
+                    }
+                    if (HissatsuSenei.WillHaveOneChargeGCD(54 + 2 * SamFillerCombo))
+                    {
+                        //even burst but after Senei used
+                        EvenFillerPhasestep = 0;
+                        EvenFillerPhaseInProgress = true;
+                    }
                     EvenFillerPhasestep = 0;
                     EvenFillerPhaseInProgress = true;
+                }
+            }
+            
+            
+            */
+            #endregion
+
+
+
+
+
+            var meikyoBuff = Player.HasStatus(true, StatusID.MeikyoShisui);
+            var ogiready = Player.HasStatus(true, StatusID.OgiNamikiriReady);
+            var ogitime = Player.WillStatusEnd(5, true, StatusID.OgiNamikiriReady);
+            bool inOddFiller = false;
+            bool inEvenFiller = false;
+            bool fillerComplete = false;
+            bool fastFillerReady = false;
+            bool hasDied = false;
+            //bool evenMinute = CombatTime % 2 == 1;
+            //bool oddMinute = CombatTime % 2 == 0;
+            var meikyostacks = Player.StatusStack(true, StatusID.MeikyoShisui);
+            var oneSeal = SenCount == 1;
+            var twoSeal = SenCount == 2;
+            var threeSeal = SenCount == 3;
+            if (Player.HasStatus(true, StatusID.Weakness))
+                hasDied = true;
+            var SamAOEKenkiOvercapAmount = Configs.GetInt("KenkiwastePrevent");
+
+            bool openerReady = MeikyoShisui.CurrentCharges == 1 && !HissatsuSenei.IsCoolingDown && !Ikishoten.IsCoolingDown && TsubameGaeshi.CurrentCharges == 2;
+
+
+            #region PvEFreestyle
+            #region AOE
+            if (NumberOfAllHostilesInRange >= 3)
+            {
+                if (OgiNamikiri.EnoughLevel)
+                {
+
+
+                    if (KaeshiNamikiri.CanUse(out act, CanUseOption.MustUse)) return true;
+                    if (OgiNamikiri.CanUse(out act, CanUseOption.MustUse)) return true;
+
+                }
+
+                if (TenkaGoken.EnoughLevel)
+                {
+                    if (!IsMoving)
+                    {
+                        if (TenkaGoken.CanUse(out act, CanUseOption.MustUse)) return true;
+                        if (MidareSetsugekka.CanUse(out act, CanUseOption.MustUse)) return true;
+                    }
+
+                    if (TsubameGaeshi.EnoughLevel && TsubameGaeshi.CurrentCharges > 0)
+                    {
+                        if (KaeshiGoken.CanUse(out act, CanUseOption.MustUse)) return true;
+                    }
+                }
+
+                if (meikyoBuff)
+                {
+                    if ((HasGetsu == false && HasFlower) || !HasMoon)
+                    {
+                        if (Mangetsu.CanUse(out act, CanUseOption.MustUse)) return true;
+                    }
+
+                    if ((HasKa == false && HasMoon) || !HasFlower)
+                    {
+                        if (Oka.CanUse(out act, CanUseOption.MustUse)) return true;
+                    }
+                }
+
+                if (ActionManager.Instance()->Combo.Timer > 0)
+                {
+                    if (Mangetsu.EnoughLevel && (ActionManager.Instance()->Combo.Action == Fuko.ID || ActionManager.Instance()->Combo.Action == Fuga.ID))
+                    {
+                        if (HasGetsu == false || IsMoonTimeLessThanFlower || !HasMoon)
+                        {
+                            if (Mangetsu.CanUse(out act, CanUseOption.MustUse)) return true;
+                        }
+
+                        if (Oka.EnoughLevel && (HasKa == false || !IsMoonTimeLessThanFlower || !HasFlower))
+                        {
+                            if (Oka.CanUse(out act, CanUseOption.MustUse)) return true;
+                        }
+                    }
+                }
+
+                if (!Oka.EnoughLevel && Kasha.EnoughLevel)
+                {
+
+                    if (Kasha.CanUse(out act, CanUseOption.MustUse)) return true;
+                    if (Shifu.CanUse(out act, CanUseOption.MustUse)) return true;
+                    if (HasKa == false || !IsMoonTimeLessThanFlower || !HasFlower && Hakaze.EnoughLevel)
+                    {
+                        if (Hakaze.CanUse(out act, CanUseOption.MustUse)) return true;
+                    }
+                }
+
+                if (Fuko.CanUse(out act)) return true;
+                if (!Fuko.EnoughLevel && Fuga.CanUse(out act)) return true;
+            }
+            #endregion
+
+            #region SingleTarget
+            //filler stuff here needs more testing
+            if (!hasDied && OgiNamikiri.EnoughLevel && CombatTime > 60)
+            {
+                bool oddMinute = SenCount == 0 && SeneiCool < 40 && SeneiCool > 20 && HostileTarget && HostileTarget.HasStatus(true, StatusID.Higanbana);
+                bool evenMinute = SenCount == 0 && SeneiCool < 100 && SeneiCool > 80 && HostileTarget && HostileTarget.HasStatus(true,StatusID.Higanbana);
+                bool fillerfinished = RecordActions?.FirstOrDefault().Action.RowId == Hagakure.ID;
+                bool fillerready = RecordActions?.FirstOrDefault().Action.RowId == MidareSetsugekka.ID;
+
+                if (evenMinute && !fillerfinished && fillerready)
+                {
+                    EvenFillerPhasestep = 0;
+                    EvenFillerPhaseInProgress = true;
+                }
+
+                if (oddMinute && !fillerfinished && fillerready) 
+                {
+                    OddFillerPhasestep = 0;
+                    OddFillerPhaseInProgress = true;
+
+                }
+                
+            }
+            //end filler
+
+            // higabana drift fixer
+            if (Player.Level == 90 && CombatTime > 45 && meikyoBuff && SenCount == 1 && HostileTarget && (HostileTarget.WillStatusEnd(20,true, StatusID.Higanbana) || !HostileTarget.HasStatus(true, StatusID.Higanbana)))
+            {
+                if (Higanbana.CanUse(out act)) return true;
+            }
+            if (!InCombat)
+            {
+                hasDied = false;
+                nonOpener = true;
+                inOpener = false;
+
+                if (OgiNamikiri.EnoughLevel)
+                {
+                    if ((IsLastAction(true, MeikyoShisui) || meikyoBuff) && openerReady)
+                    {
+                        if (!inOpener)
+                            inOpener = true;
+                        nonOpener = false;
+                    }
+
+                    if (inOpener)
+                    {
+                        if (meikyostacks == 3 && (oneSeal || twoSeal || threeSeal) && Hagakure.EnoughLevel)
+                        {
+                            if (Hagakure.CanUse(out act)) return true;
+                        }
+                    }
+                }
+                //Prep for Opener
+                if (meikyoBuff && !MeikyoShisui.IsCoolingDown && SenCount == 0 && Gekko.EnoughLevel)
+                    if (Gekko.CanUse(out act)) return true;
+
+                //Stops waste if you use Iaijutsu or Ogi and you've got a Kaeshi ready
+                if (!inOpener)
+                {
+                    if (KaeshiNamikiri.CanUse(out act, CanUseOption.MustUse)) return true;
+                    if (OgiNamikiri.CanUse(out act, CanUseOption.MustUse)) return true;
+
+                    if (TsubameGaeshi.EnoughLevel && TsubameGaeshi.CurrentCharges > 0)
+
+                    {
+                        if (KaeshiGoken.CanUse(out act, CanUseOption.MustUse)) return true;
+                        if (KaeshiSetsugekka.CanUse(out act, CanUseOption.MustUseEmpty)) return true;
+                    }
+                }
+            }
+
+            if (Enpi.EnoughLevel && !inEvenFiller && !inOddFiller && HostileTarget?.DistanceToPlayer() > 3)
+                if (Enpi.CanUse(out act)) return true;
+
+
+            if (InCombat)
+            {
+                if (inOpener && OgiNamikiri.EnoughLevel && !hasDied && !nonOpener)
+                {
+
+
+                    //GCDs
+                    if ((twoSeal && ActionManager.Instance()->Combo.Action == Yukikaze.ID) ||
+                        (threeSeal && (meikyostacks == 1 || !ogiready)) ||
+                        (oneSeal && !HostileTarget.HasStatus(true, StatusID.Higanbana) && TsubameGaeshi.CurrentCharges == 1) && !IsTargetDying)
+                    {
+                        if (MidareSetsugekka.CanUse(out act)) return true;
+                        if (TenkaGoken.CanUse(out act)) return true;
+                        if (Higanbana.CanUse(out act)) return true;
+
+                    }
+
+                    if (KaeshiNamikiri.CanUse(out act, CanUseOption.MustUse)) return true;
+                    if (OgiNamikiri.CanUse(out act, CanUseOption.MustUse)) return true;
+                    if (KaeshiSetsugekka.CanUse(out act, CanUseOption.MustUse)) return true;
+                    if (KaeshiGoken.CanUse(out act, CanUseOption.MustUse)) return true;
+
+                    //1-2-3 Logic
+                    if (ActionManager.Instance()->Combo.Action == Hakaze.ID)
+                    { if (Yukikaze.CanUse(out act)) return true; }
+
+                    if (twoSeal && MeditationStacks == 0 && HostileTarget.HasStatus(true, StatusID.Higanbana))
+                    { if (Hakaze.CanUse(out act)) return true; }
+
+                    if (meikyostacks == 3)
+                    { if (Gekko.CanUse(out act)) return true; }
+
+                    if (meikyostacks == 2 && !ogiready)
+                    { if (Kasha.CanUse(out act)) return true; }
+
+                    if (meikyostacks == 1)
+                    {
+                        if (Ikishoten.WillHaveOneCharge(110))
+                        { if (Yukikaze.CanUse(out act)) return true; }
+
+                        if (MeditationStacks == 0 || !ogiready)
+                        { if (Gekko.CanUse(out act)) return true; }
+                    }
+
+                    if (TsubameGaeshi.CurrentCharges == 0)
+                        inOpener = false;
+
+                    if ((ActionManager.Instance()->Combo.Action == Yukikaze.ID && oneSeal) || (ActionManager.Instance()->Combo.Action == Hakaze.ID && (threeSeal || HasSetsu)) || CombatTime > 40)
+                    {
+                        inOpener = false;
+                        nonOpener = true;
+                    }
+                }
+
+                if (!inOpener)
+                {
+
+
+                    //Death desync check
+                    if (Player.HasStatus(true, StatusID.Weakness))
+                        hasDied = true;
+
+
+                    //Filler Features
+                    
+
+                    //Meikyo Waste Protection (Stops waste during even minute windows)
+                    if (meikyoBuff && Player.WillStatusEnd(6, true, StatusID.MeikyoShisui) && ogiready)
+                    {
+                        if (!HasGetsu && Gekko.EnoughLevel)
+                        { if (Gekko.CanUse(out act)) return true; }
+
+                        if (!HasKa && Kasha.EnoughLevel)
+                        { if (Kasha.CanUse(out act)) return true; }
+
+                        if (!HasSetsu && Yukikaze.EnoughLevel)
+                        { if (Yukikaze.CanUse(out act)) return true; }
+                    }
+                    // Iaijutsu Features
+                    if (Higanbana.EnoughLevel)
+                    {
+                        if (KaeshiSetsugekka.IsEnabled && TsubameGaeshi.EnoughLevel && TsubameGaeshi.CurrentCharges > 0)
+                        { if (KaeshiSetsugekka.CanUse(out act, CanUseOption.MustUseEmpty)) return true; }
+
+                        if (!IsMoving)
+                        {
+                            if (((oneSeal || (oneSeal && meikyostacks == 2)) && HostileTargets.Any(p => p.WillStatusEnd(10, true, StatusID.Higanbana)) && !IsTargetDying ||
+                                (twoSeal && !MidareSetsugekka.EnoughLevel) ||
+                                (threeSeal && MidareSetsugekka.EnoughLevel)))
+                            {
+                                if (MidareSetsugekka.CanUse(out act)) return true;
+                                if (TenkaGoken.CanUse(out act)) return true;
+                                if (Higanbana.CanUse(out act)) return true;
+
+                            }
+                        }
+                    }
+
+                    //Ogi Namikiri Features
+                    if (OgiNamikiri.EnoughLevel)
+                    {
+                        if ((!IsMoving && ogiready) || KaeshiNamikiri.IsEnabled)
+                        {
+                            if (hasDied || nonOpener || (meikyostacks is 1 or 2 && !HostileTargets.Any(p => p.WillStatusEnd(45, true, StatusID.Higanbana)) && meikyoBuff) || Ikishoten.WillHaveOneCharge(105))
+                            {
+                                if (KaeshiNamikiri.CanUse(out act, CanUseOption.MustUse)) return true;
+                                if (OgiNamikiri.CanUse(out act, CanUseOption.MustUse)) return true;
+                            }
+
+                        }
+                    }
+
 
                 }
             }
 
-            #endregion
-                /*
-                if (KaeshiNamikiri.CanUse(out act, CanUseOption.MustUse)) return true;
-                if (KaeshiGoken.CanUse(out act, CanUseOption.MustUse | CanUseOption.EmptyOrSkipCombo)) return true;
-                if (KaeshiSetsugekka.CanUse(out act, CanUseOption.MustUse | CanUseOption.EmptyOrSkipCombo)) return true;
-                if ((!IsTargetBoss || (HostileTarget?.HasStatus(true, StatusID.Higanbana) ?? false)) && HasMoon && HasFlower
-                    && OgiNamikiri.CanUse(out act, CanUseOption.MustUse)) return true;
-                if (SenCount == 1 && IsTargetBoss && !IsTargetDying)
+            if (!inOpener)
+            {
+                if (meikyoBuff)
                 {
-                    if (HasMoon && HasFlower && Higanbana.CanUse(out act)) return true;
-                }
-                if (SenCount == 2)
-                {
-                    if (TenkaGoken.CanUse(out act, !MidareSetsugekka.EnoughLevel ? CanUseOption.MustUse : CanUseOption.None)) return true;
-                }
-                if (SenCount == 3)
-                {
-                    if (MidareSetsugekka.CanUse(out act)) return true;
-                }
-                if ((!HasMoon || IsMoonTimeLessThanFlower || !Oka.EnoughLevel) && Mangetsu.CanUse(out act, Player.HasStatus(true, StatusID.MeikyoShisui) && !HasGetsu ? CanUseOption.EmptyOrSkipCombo : CanUseOption.None)) return true;
-                if ((!HasFlower || !IsMoonTimeLessThanFlower) && Oka.CanUse(out act, Player.HasStatus(true, StatusID.MeikyoShisui) && !HasKa ? CanUseOption.EmptyOrSkipCombo : CanUseOption.None)) return true;
-                if (!HasSetsu && Yukikaze.CanUse(out act, Player.HasStatus(true, StatusID.MeikyoShisui) && HasGetsu && HasKa && !HasSetsu ? CanUseOption.EmptyOrSkipCombo : CanUseOption.None)) return true;
-                if (Gekko.CanUse(out act, Player.HasStatus(true, StatusID.MeikyoShisui) && !HasGetsu ? CanUseOption.EmptyOrSkipCombo : CanUseOption.None)) return true;
-                if (Kasha.CanUse(out act, Player.HasStatus(true, StatusID.MeikyoShisui) && !HasKa ? CanUseOption.EmptyOrSkipCombo : CanUseOption.None)) return true;
-                if ((!HasMoon || IsMoonTimeLessThanFlower || !Shifu.EnoughLevel) && Jinpu.CanUse(out act)) return true;
-                if ((!HasFlower || !IsMoonTimeLessThanFlower) && Shifu.CanUse(out act)) return true;
+                    if (!HasMoon || (!HasGetsu && HasFlower))
+                    { if (Gekko.CanUse(out act, CanUseOption.EmptyOrSkipCombo)) return true; }
 
-                if (!Player.HasStatus(true, StatusID.MeikyoShisui))
+                    if (((!HasKa && HasMoon) || !HasFlower))
+                    { if (Kasha.CanUse(out act, CanUseOption.EmptyOrSkipCombo)) return true; }
+
+                    if (!HasSetsu)
+                    { if (Yukikaze.CanUse(out act, CanUseOption.EmptyOrSkipCombo)) return true; }
+                }
+
+                if (ActionManager.Instance()->Combo.Timer > 0)
                 {
-                    if (Fuko.CanUse(out act)) return true;
-                    if (!Fuko.EnoughLevel && Fuga.CanUse(out act)) return true;
+                    if (ActionManager.Instance()->Combo.Action == Hakaze.ID && Jinpu.EnoughLevel)
+                    {
+                        if (!HasSetsu && Yukikaze.EnoughLevel && HasMoon && HasFlower)
+                        { if (Yukikaze.CanUse(out act)) return true; }
+                        //IsMoonTimeLessThanFlower
+                        if ((!Kasha.EnoughLevel && ((IsMoonTimeLessThanFlower) || !HasMoon)) ||
+                           (Kasha.EnoughLevel && (!HasMoon || (HasFlower && !HasGetsu) || (threeSeal && (IsMoonTimeLessThanFlower)))))
+                        { if (Jinpu.CanUse(out act)) return true; }
+
+                        if (Shifu.EnoughLevel &&
+                            ((!Kasha.EnoughLevel && ((!IsMoonTimeLessThanFlower) || !HasFlower)) ||
+                            (Kasha.EnoughLevel && (!HasFlower || (HasMoon && !HasKa) || (threeSeal && (!IsMoonTimeLessThanFlower))))))
+                        { if (Shifu.CanUse(out act)) return true; }
+                    }
+
+                    if (ActionManager.Instance()->Combo.Action == Jinpu.ID && Gekko.EnoughLevel)
+                    { if (Gekko.CanUse(out act)) return true; }
+
+                    if (ActionManager.Instance()->Combo.Action == Shifu.ID && Kasha.EnoughLevel)
+                    { if (Kasha.CanUse(out act)) return true; }
+                }
+            }
+
+
+            if (Hakaze.CanUse(out act)) return true;
+
+            #endregion
+
+            #endregion
+
+
+
+
+
+
+
+
+
+            /*
+            bool oddMinute = HostileTargets.Any(p => p.WillStatusEnd(48, true, StatusID.Higanbana)) && !HostileTargets.Any(p => p.WillStatusEnd(51, true, StatusID.Higanbana) && !HissatsuSenei.WillHaveOneCharge(45));
+            bool evenMinute = HostileTargets.Any(p => p.WillStatusEnd(44, true, StatusID.Higanbana)) && !HostileTargets.Any(p => p.WillStatusEnd(47, true, StatusID.Higanbana) && !HissatsuSenei.WillHaveOneCharge(85));
+            if (HostileTargets.Any(p => p.HasStatus(true, StatusID.Higanbana)) && oddMinute || evenMinute)
+            {
+                if (SamFillerCombo == 2)
+                {
+                    if (RecordActions?.FirstOrDefault().Action.RowId == Hagakure.ID)
+                        fillerComplete = true;
+                    if (SenCount > 0)
+                    { if (Hagakure.CanUse(out act)) return true; }
+                    if (Yukikaze.CanUse(out act)) return true;
                     if (Hakaze.CanUse(out act)) return true;
-                    if (Enpi.CanUse(out act)) return true;
-                }*/
+                }
+
+                if (SamFillerCombo == 3)
+                {
+                    if (RecordActions?.FirstOrDefault().Action.RowId == Hagakure.ID)
+                        fillerComplete = true;
+                    if (SenCount > 0)
+                    { if (Hagakure.CanUse(out act)) return true; }
+                    if (Gekko.CanUse(out act)) return true;
+                    if (Jinpu.CanUse(out act)) return true;
+                    if (Hakaze.CanUse(out act)) return true;
+                }
+            }
+            if (KaeshiNamikiri.CanUse(out act, CanUseOption.MustUse)) return true;
+            if (KaeshiGoken.CanUse(out act, CanUseOption.MustUse | CanUseOption.EmptyOrSkipCombo)) return true;
+            if (KaeshiSetsugekka.CanUse(out act, CanUseOption.MustUse | CanUseOption.EmptyOrSkipCombo)) return true;
+            if (ogitime && OgiNamikiri.CanUse(out act, CanUseOption.MustUse)) return true;
+            if ((!IsTargetBoss || (HostileTarget?.HasStatus(true, StatusID.Higanbana) ?? false)) && HasMoon && HasFlower && OgiNamikiri.CanUse(out act, CanUseOption.MustUse)) return true;
+            if (SenCount == 1 && IsTargetBoss && !IsTargetDying)
+            {
+                if (HasMoon && HasFlower && Higanbana.CanUse(out act)) return true;
+            }
+            if (SenCount == 2)
+            {
+                if (TenkaGoken.CanUse(out act, !MidareSetsugekka.EnoughLevel ? CanUseOption.MustUse : CanUseOption.None)) return true;
+            }
+            if (SenCount == 3)
+            {
+                if (MidareSetsugekka.CanUse(out act)) return true;
+            }
+            if ((!HasMoon || IsMoonTimeLessThanFlower || !Oka.EnoughLevel) && Mangetsu.CanUse(out act, meikyoBuff && !HasGetsu ? CanUseOption.EmptyOrSkipCombo : CanUseOption.None)) return true;
+            if ((!HasFlower || !IsMoonTimeLessThanFlower) && Oka.CanUse(out act, meikyoBuff && !HasKa ? CanUseOption.EmptyOrSkipCombo : CanUseOption.None)) return true;
+            if (!HasSetsu && Yukikaze.CanUse(out act, meikyoBuff && HasGetsu && HasKa && !HasSetsu ? CanUseOption.EmptyOrSkipCombo : CanUseOption.None)) return true;
+            if (Gekko.CanUse(out act, meikyoBuff && !HasGetsu ? CanUseOption.EmptyOrSkipCombo : CanUseOption.None)) return true;
+            if (Kasha.CanUse(out act, meikyoBuff && !HasKa ? CanUseOption.EmptyOrSkipCombo : CanUseOption.None)) return true;
+            if ((!HasMoon || IsMoonTimeLessThanFlower || !Shifu.EnoughLevel) && Jinpu.CanUse(out act)) return true;
+            if ((!HasFlower || !IsMoonTimeLessThanFlower) && Shifu.CanUse(out act)) return true;
+            if (!meikyoBuff)
+            {
+                if (Fuko.CanUse(out act)) return true;
+                if (!Fuko.EnoughLevel && Fuga.CanUse(out act)) return true;
+                if (Hakaze.CanUse(out act)) return true;
+                if (Enpi.CanUse(out act)) return true;
+            }
+            */
             return false;
 
         }
 
-        protected override bool AttackAbility(out IAction act)
+        protected unsafe override bool AttackAbility(out IAction act)
         {
 
             act = null;
             ActionID Adjsuted_Keishi = AdjustId(ActionID.TsubameGaeshi);
+            ActionID Adjsuted_Namikiri = AdjustId(ActionID.OgiNamikiri);
             var IsTargetBoss = HostileTarget?.IsBossFromTTK() ?? false;
             var IsTargetDying = HostileTarget?.IsDying() ?? false;
+            var meikyoBuff = Player.HasStatus(true, StatusID.MeikyoShisui);
+            bool hasDied = false;
+            //bool evenMinute = CombatTime % 2 == 1;
+            //bool oddMinute = CombatTime % 2 == 0;
+            var meikyostacks = Player.StatusStack(true, StatusID.MeikyoShisui);
+            var oneSeal = SenCount == 1;
+            var twoSeal = SenCount == 2;
+            var threeSeal = SenCount == 3;
+            if (Player.HasStatus(true, StatusID.Weakness))
+                hasDied = true;
+            if (Player.HasStatus(true, StatusID.Weakness))
+                hasDied = true;
 
-            if (!OpenerInProgress)
-            {
-                if (Shoha2.CanUse(out act)) return true;
-                if (Shoha.CanUse(out act)) return true;
-                if (Kenki >= 50)
-                {
-                    if (HissatsuKyuten.CanUse(out act)) return true;
-                    if (HissatsuShinten.CanUse(out act)) return true;
-                }
-            }
             #region PvEPhases
 
             if (OpenerInProgress)
@@ -1026,9 +1412,121 @@ namespace RabbsRotations.Melee
                 return CoolddownPhaseEven(out act);
             }
             #endregion
+            //oGCDs
+            if (RecordActions?.FirstOrDefault().Action.RowId == KaeshiSetsugekka.ID)
+            { if (MeikyoShisui.CanUse(out act, CanUseOption.MustUseEmpty)) return true; }
+            //Senei Features
+            if (Player.Level == 90 && Kenki >= 25 && !HissatsuSenei.IsCoolingDown && RecordActions?.FirstOrDefault().Action.RowId == MidareSetsugekka.ID)
+            {
+                if (HissatsuGuren.CanUse(out act)) return true;
+                if (HissatsuSenei.CanUse(out act)) return true;
+            }
+            if (Player.Level != 90 && Kenki >= 25 && !HissatsuSenei.IsCoolingDown)
+            {
+                if (HissatsuShinten.EnoughLevel && !HissatsuSenei.EnoughLevel)
+                {
+                    if (HissatsuKyuten.CanUse(out act)) return true;
+                    if (HissatsuShinten.CanUse(out act)) return true;
+                }
+
+                if (HissatsuSenei.EnoughLevel)
+                {
+
+                    if (hasDied || nonOpener || Ikishoten.WillHaveOneCharge(110) || ((KaeshiSetsugekka.IsEnabled || SenCount == 0) && HostileTargets.Any(p => p.WillStatusEnd(10, true, StatusID.Higanbana))))
+                    {
+                        if (HissatsuGuren.CanUse(out act)) return true;
+                        if (HissatsuSenei.CanUse(out act)) return true;
+                    }
+
+                }
+            }
+
+            if (KaeshiNamikiri.IsEnabled && MeditationStacks == 3)
+            {
+                if (Shoha2.CanUse(out act)) return true;
+                if (Shoha.CanUse(out act)) return true;
+            }
+
+            if (twoSeal && MeditationStacks == 0 && Ikishoten.WillHaveOneCharge(110) && Ikishoten.IsCoolingDown && !HissatsuSenei.WillHaveOneCharge(10))
+            {
+                if (Kenki >= 25)
+                {
+                    if (HissatsuKyuten.CanUse(out act)) return true;
+                    if (HissatsuShinten.CanUse(out act)) return true;
+                }
+
+            }
+
+            if (Kenki >= 25 && !HissatsuSenei.WillHaveOneCharge(10))
+            {
+                if (oneSeal && meikyostacks == 0)
+                {
+                    if (HissatsuKyuten.CanUse(out act)) return true;
+                    if (HissatsuShinten.CanUse(out act)) return true;
+                }
+
+                if (Player.Level != 90 && meikyostacks == 1 && !HissatsuSenei.IsCoolingDown && (KaeshiSetsugekka.IsEnabled || SenCount == 0))
+                {
+                    if (HissatsuGuren.CanUse(out act)) return true;
+                    if (HissatsuSenei.CanUse(out act)) return true;
+                }
+            }
+
+            if (Player.Level < 76 && SenCount == 0 && meikyostacks == 1 && TsubameGaeshi.CurrentCharges == 1 && !meikyoBuff)
+            { if (MeikyoShisui.CanUse(out act, CanUseOption.MustUseEmpty)) return true; }
+
+            if (Kenki >= 25 && Shoha.IsCoolingDown && !HissatsuSenei.WillHaveOneCharge(10))
+            {
+                if (HissatsuKyuten.CanUse(out act)) return true;
+                if (HissatsuShinten.CanUse(out act)) return true;
+            }
+
+
+            //Meikyo Features
+            if (Player.Level < 76 && !meikyoBuff && HasHostilesInRange && IsLastGCD(true, Yukikaze, Mangetsu, Oka) &&
+            (!IsTargetBoss || (HostileTarget?.HasStatus(true, StatusID.Higanbana) ?? false) && !(HostileTarget?.WillStatusEnd(40, true, StatusID.Higanbana) ?? false) || !HasMoon && !HasFlower || IsTargetBoss && IsTargetDying))
+            {
+                if (MeikyoShisui.CanUse(out act, CanUseOption.MustUseEmpty)) return true;
+            }
+
+            
+
+            if (HissatsuShinten.EnoughLevel && Kenki >= 25 && !HissatsuSenei.WillHaveOneCharge(10))
+            {
+                if (HissatsuSenei.WillHaveOneCharge(110) || Kenki >= 50 || IsTargetDying)
+                {
+                    if (HissatsuKyuten.CanUse(out act)) return true;
+                    if (HissatsuShinten.CanUse(out act)) return true;
+                }
+            }
+
+            //Ikishoten Features
+            if (Ikishoten.EnoughLevel)
+            {
+                //Dumps Kenki in preparation for Ikishoten
+                if (Kenki > 50 && Ikishoten.WillHaveOneCharge(10))
+                {
+                    if (HissatsuKyuten.CanUse(out act)) return true;
+                    if (HissatsuShinten.CanUse(out act)) return true;
+                }
+
+                if (Kenki <= 50 && !Ikishoten.IsCoolingDown && RecordActions?.FirstOrDefault().Action.RowId == Higanbana.ID)
+                { if (Ikishoten.CanUse(out act)) return true; }
+            }
+
+            if (Shoha.EnoughLevel && MeditationStacks == 3)
+            {
+                if (Shoha2.CanUse(out act)) return true;
+                if (Shoha.CanUse(out act)) return true;
+            }
+       
+
+
+
+
             /*
             if (Kenki <= 50 && Ikishoten.CanUse(out act)) return true;
-            if ((HostileTarget?.HasStatus(true, StatusID.Higanbana) ?? false) && (HostileTarget?.WillStatusEnd(32, true, StatusID.Higanbana) ?? false) && !(HostileTarget?.WillStatusEnd(28, true, StatusID.Higanbana) ?? false) && SenCount == 1 && IsLastAction(true, Yukikaze) && !Player.HasStatus(true, StatusID.MeikyoShisui))
+            if ((HostileTarget?.HasStatus(true, StatusID.Higanbana) ?? false) && (HostileTarget?.WillStatusEnd(32, true, StatusID.Higanbana) ?? false) && !(HostileTarget?.WillStatusEnd(28, true, StatusID.Higanbana) ?? false) && SenCount == 1 && IsLastAction(true, Yukikaze) && !meikyoBuff)
             {
                 if (Hagakure.CanUse(out act)) return true;
             }
@@ -1039,21 +1537,43 @@ namespace RabbsRotations.Melee
             }
             if (Shoha2.CanUse(out act)) return true;
             if (Shoha.CanUse(out act)) return true;
-            if (Kenki >= 50 && Ikishoten.WillHaveOneCharge(10) || IsTargetBoss && IsTargetDying)
+            if (Kenki >= 50 && Ikishoten.WillHaveOneCharge(10) || Kenki >= Configs.GetInt("addKenki") || IsTargetBoss && IsTargetDying)
             {
                 if (HissatsuKyuten.CanUse(out act)) return true;
                 if (HissatsuShinten.CanUse(out act)) return true;
             }
-            */
 
+            */
 
             return base.AttackAbility(out act);
         }
 
         protected override bool EmergencyAbility(IAction nextGCD, out IAction act)
         {
+            var IsTargetBoss = HostileTarget?.IsBossFromTTK() ?? false;
+            var IsTargetDying = HostileTarget?.IsDying() ?? false;
 
-                return base.EmergencyAbility(nextGCD, out act);
+
+            /*
+
+            if (!OpenerInProgress)
+            {
+                if (Shoha2.CanUse(out act)) return true;
+                if (Shoha.CanUse(out act)) return true;
+            }
+            if (!OpenerInProgress && Kenki > 50)
+            {
+                if (HissatsuKyuten.CanUse(out act)) return true;
+                if (HissatsuShinten.CanUse(out act)) return true;
+
+            }
+            if (!OpenerInProgress && HasHostilesInRange && IsLastGCD(true, Yukikaze, Mangetsu, Oka) &&
+            (!IsTargetBoss || (HostileTarget?.HasStatus(true, StatusID.Higanbana) ?? false) && !(HostileTarget?.WillStatusEnd(40, true, StatusID.Higanbana) ?? false) || !HasMoon && !HasFlower || IsTargetBoss && IsTargetDying))
+            {
+                if (MeikyoShisui.CanUse(out act, CanUseOption.EmptyOrSkipCombo)) return true;
+            }
+            */
+            return base.EmergencyAbility(nextGCD, out act);
         }
 
 

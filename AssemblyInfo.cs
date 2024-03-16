@@ -1,2 +1,2 @@
 ﻿[assembly: AuthorHash(Hash = "")]
-[assembly: AssemblyLink(UserName = "Rabbs",Repository = "Private")]
+[assembly: AssemblyLink(UserName = "Rabalaba",Repository = "https://github.com/Rabalaba/Rabbs-Rotations-for-Rotation-Solver")]
