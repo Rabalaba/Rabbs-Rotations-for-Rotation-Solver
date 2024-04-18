@@ -4,11 +4,12 @@ using RotationSolver.Basic.Data;
 using System;
 using static FFXIVClientStructs.FFXIV.Client.Game.Control.GazeController;
 
-namespace DefaultRotations.Tank;
+namespace RabbsRotationsNET8.PVE.Tank;
 
 [Rotation("Rabbs Gnb (Single Target Only for now)", CombatType.PvE, GameVersion = "6.58")]
 [SourceCode(Path = "main/RabbsRotations/Tank/GNB.cs")]
-public unsafe sealed class GNB : GunbreakerRotation
+[Api(1)]
+public unsafe sealed class GNB_PVE : GunbreakerRotation
 {
 
     public override bool CanHealSingleSpell => false;
@@ -86,11 +87,11 @@ public unsafe sealed class GNB : GunbreakerRotation
         {
             bool activeNoMercy = NoMercyPvE.Cooldown.RecastTimeRemainOneCharge > 50 || NoMercy;
             if (GetCooldownRemainingTime(GnashingFangPvE) <= GetCooldownRemainingTime(KeenEdgePvE) && AmmoComboStep == 0 &&
-                ((Ammo == MaxCartridges && activeNoMercy && ((!TwoMinteWindow && regularSkS) || slowSkS)) || //Regular 60 second GF/NM timing
-                (Ammo == MaxCartridges && activeNoMercy && TwoMinteWindow && GetCooldownRemainingTime(DoubleDownPvE) <= 1 && regularSkS) || //2 min delay for regular SkS
-                (Ammo == 1 && NoMercy && GetCooldownRemainingTime(DoubleDownPvE) > 50) || //NMDDGF windows/Scuffed windows
-                (Ammo > 0 && GetCooldownRemainingTime(NoMercyPvE) > 17 && GetCooldownRemainingTime(NoMercyPvE) < 35) || //Regular 30 second window                                                                        
-                (Ammo == 1 && GetCooldownRemainingTime(NoMercyPvE) > 50 && ((IsOffCooldown(BloodbathPvE) && LevelChecked(BloodbathPvE)) || !LevelChecked(BloodbathPvE))))) //Opener Conditions
+                (Ammo == MaxCartridges && activeNoMercy && (!TwoMinteWindow && regularSkS || slowSkS) || //Regular 60 second GF/NM timing
+                Ammo == MaxCartridges && activeNoMercy && TwoMinteWindow && GetCooldownRemainingTime(DoubleDownPvE) <= 1 && regularSkS || //2 min delay for regular SkS
+                Ammo == 1 && NoMercy && GetCooldownRemainingTime(DoubleDownPvE) > 50 || //NMDDGF windows/Scuffed windows
+                Ammo > 0 && GetCooldownRemainingTime(NoMercyPvE) > 17 && GetCooldownRemainingTime(NoMercyPvE) < 35 || //Regular 30 second window                                                                        
+                Ammo == 1 && GetCooldownRemainingTime(NoMercyPvE) > 50 && (IsOffCooldown(BloodbathPvE) && LevelChecked(BloodbathPvE) || !LevelChecked(BloodbathPvE)))) //Opener Conditions
                 if (GnashingFangPvE.CanUse(out act)) return true;
             if (AmmoComboStep is 1 or 2)
             {
@@ -136,17 +137,17 @@ public unsafe sealed class GNB : GunbreakerRotation
             {
                 if (regularSkS)
                 {
-                    if ((Ammo is 1 && CombatElapsedLess(30) && !BloodfestPvE.Cooldown.IsCoolingDown) || //Opener Conditions
-                       (TwoMinteWindow && GetCooldownRemainingTime(DoubleDownPvE) < 4) || //2 min delay
-                       (!TwoMinteWindow && Ammo == MaxCartridges && GetCooldownRemainingTime(GnashingFangPvE) < 4)) //Regular NMGF
+                    if (Ammo is 1 && CombatElapsedLess(30) && !BloodfestPvE.Cooldown.IsCoolingDown || //Opener Conditions
+                       TwoMinteWindow && GetCooldownRemainingTime(DoubleDownPvE) < 4 || //2 min delay
+                       !TwoMinteWindow && Ammo == MaxCartridges && GetCooldownRemainingTime(GnashingFangPvE) < 4) //Regular NMGF
                         if (NoMercyPvE.CanUse(out act)) return true;
                 }
 
                 if (slowSkS)
                 {
-                    if ((CombatElapsedLess(30) && InCombat && Player.HasStatus(true, StatusID.BrutalShell)) ||
+                    if (CombatElapsedLess(30) && InCombat && Player.HasStatus(true, StatusID.BrutalShell) ||
                         Ammo == MaxCartridges ||
-                        (IsOddMinute() && Ammo == 2 && IsLastGCD(true, BurstStrikePvE)))
+                        IsOddMinute() && Ammo == 2 && IsLastGCD(true, BurstStrikePvE))
                         if (NoMercyPvE.CanUse(out act)) return true;
                 }
             }
@@ -159,19 +160,19 @@ public unsafe sealed class GNB : GunbreakerRotation
 
         if (Ammo is 0 && NoMercy)
         {
-            if ((regularSkS && GnashingFangPvE.Cooldown.IsCoolingDown) || (slowSkS && NoMercyPvE.Cooldown.IsCoolingDown))
+            if (regularSkS && GnashingFangPvE.Cooldown.IsCoolingDown || slowSkS && NoMercyPvE.Cooldown.IsCoolingDown)
                 if (BloodfestPvE.CanUse(out act)) return true;
         }
 
 
 
         //Blasting Zone outside of NM
-        if (!NoMercy && ((GnashingFangPvE.Cooldown.IsCoolingDown && NoMercyPvE.Cooldown.RecastTimeRemainOneCharge > 17) || //Post Gnashing Fang
+        if (!NoMercy && (GnashingFangPvE.Cooldown.IsCoolingDown && NoMercyPvE.Cooldown.RecastTimeRemainOneCharge > 17 || //Post Gnashing Fang
             !GnashingFangPvE.EnoughLevel)) //Pre Gnashing Fang
             if (DangerZonePvE.CanUse(out act)) return true;
 
         //Stops DZ Drift
-        if (NoMercy && ((SonicBreakPvE.Cooldown.IsCoolingDown && slowSkS) || (DoubleDownPvE.Cooldown.IsCoolingDown && regularSkS)))
+        if (NoMercy && (SonicBreakPvE.Cooldown.IsCoolingDown && slowSkS || DoubleDownPvE.Cooldown.IsCoolingDown && regularSkS))
             if (DangerZonePvE.CanUse(out act)) return true;
 
 
@@ -184,7 +185,7 @@ public unsafe sealed class GNB : GunbreakerRotation
         if (NoMercy)
         {
             //Post DD
-            if ((regularSkS && DoubleDownPvE.Cooldown.IsCoolingDown) || (slowSkS && SonicBreakPvE.Cooldown.IsCoolingDown))
+            if (regularSkS && DoubleDownPvE.Cooldown.IsCoolingDown || slowSkS && SonicBreakPvE.Cooldown.IsCoolingDown)
             {
                 if (DangerZonePvE.CanUse(out act)) return true;
                 if (BowShockPvE.CanUse(out act, skipAoeCheck: true)) return true;
@@ -205,7 +206,7 @@ public unsafe sealed class GNB : GunbreakerRotation
             if (HostileTarget.DistanceToPlayer() <= 3 && NoMercy && DangerZonePvE.Cooldown.IsCoolingDown && BowShockPvE.Cooldown.IsCoolingDown && DoubleDownPvE.Cooldown.IsCoolingDown)
                 if (RoughDividePvE.CanUse(out act)) return true;
             if (HostileTarget.DistanceToPlayer() <= 3 && NoMercy && DangerZonePvE.Cooldown.IsCoolingDown && BowShockPvE.Cooldown.IsCoolingDown && DoubleDownPvE.Cooldown.IsCoolingDown && AmmoComboStep is 2)
-                if (RoughDividePvE.CanUse(out act, usedUp:true)) return true;
+                if (RoughDividePvE.CanUse(out act, usedUp: true)) return true;
         }
 
         // 60s window features

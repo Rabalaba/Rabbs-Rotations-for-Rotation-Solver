@@ -11,11 +11,12 @@ using static RabbsRotations.Job_Helpers.CustomComboFunctions;
 using Lumina.Excel.GeneratedSheets;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 
-namespace RabbsRotations.Melee;
+namespace RabbsRotationsNET8.PVE.Melee;
 [Rotation("Rabbs Ninja(DO NOT USE YET)", CombatType.PvE, GameVersion = "6.58")]
+//[Api(1)]
 [SourceCode(Path = "main/RabbsRotations/Melee/NIN.cs")]
 
-public sealed class NIN : NinjaRotation
+public sealed class NIN_PVE : NinjaRotation
 {
     private static bool inMudraState => Player.HasStatus(true, StatusID.Mudra);
     private static readonly MudraCasting mudraCasting = new();
@@ -36,9 +37,9 @@ public sealed class NIN : NinjaRotation
     protected unsafe override bool GeneralGCD(out IAction? act)
     {
         bool setupSuitonWindow = GetCooldownRemainingTime(TrickAttackPvE) <= 10 && !Player.HasStatus(true, StatusID.Suiton);
-        bool chargeCheck = GetRemainingCharges(TenPvE) == 2 || (GetRemainingCharges(TenPvE) == 1 && TenPvE.Cooldown.RecastTimeRemainOneCharge < 3);
+        bool chargeCheck = GetRemainingCharges(TenPvE) == 2 || GetRemainingCharges(TenPvE) == 1 && TenPvE.Cooldown.RecastTimeRemainOneCharge < 3;
         bool inTrickBurstSaveWindow = GetCooldownRemainingTime(TrickAttackPvE) <= 15 && SuitonPvE.EnoughLevel;
-        bool poolCharges = (GetRemainingCharges(TenPvE) == 1 && TenPvE.Cooldown.RecastTimeRemainOneCharge < 2) || (HostileTarget != null && HostileTarget.HasStatus(true, StatusID.TrickAttack));
+        bool poolCharges = GetRemainingCharges(TenPvE) == 1 && TenPvE.Cooldown.RecastTimeRemainOneCharge < 2 || HostileTarget != null && HostileTarget.HasStatus(true, StatusID.TrickAttack);
         uint actionID = 0;
         if (inTCJ)
         {
@@ -111,7 +112,7 @@ public sealed class NIN : NinjaRotation
         if (InCombat && !HasHostilesInRange && HasHostilesInMaxRange)
         {
             if (Player.HasStatus(true, StatusID.PhantomKamaitachiReady) &&
-                            ((GetCooldownRemainingTime(TrickAttackPvE) > Player.StatusTime(true, StatusID.PhantomKamaitachiReady) && Player.StatusTime(true, StatusID.PhantomKamaitachiReady) < 5) || (HostileTarget != null && HostileTarget.HasStatus(true, StatusID.TrickAttack)) || (Player.HasStatus(true, StatusID.Bunshin) && (HostileTarget != null && HostileTarget.HasStatus(true, StatusID.Mug)))) &&
+                            (GetCooldownRemainingTime(TrickAttackPvE) > Player.StatusTime(true, StatusID.PhantomKamaitachiReady) && Player.StatusTime(true, StatusID.PhantomKamaitachiReady) < 5 || HostileTarget != null && HostileTarget.HasStatus(true, StatusID.TrickAttack) || Player.HasStatus(true, StatusID.Bunshin) && HostileTarget != null && HostileTarget.HasStatus(true, StatusID.Mug)) &&
                             PhantomKamaitachiPvE.EnoughLevel
                             && true)
                 if (PhantomKamaitachiPvE.CanUse(out act)) return true;
@@ -153,7 +154,7 @@ public sealed class NIN : NinjaRotation
         }
 
         if (Player.HasStatus(true, StatusID.PhantomKamaitachiReady) &&
-            ((GetCooldownRemainingTime(TrickAttackPvE) > Player.StatusTime(true, StatusID.PhantomKamaitachiReady) && Player.StatusTime(true, StatusID.PhantomKamaitachiReady) < 5) || (HostileTarget != null && HostileTarget.HasStatus(true, StatusID.TrickAttack)) || (Player.HasStatus(true, StatusID.Bunshin) && HostileTarget != null && HostileTarget.HasStatus(true, StatusID.Mug))) &&
+            (GetCooldownRemainingTime(TrickAttackPvE) > Player.StatusTime(true, StatusID.PhantomKamaitachiReady) && Player.StatusTime(true, StatusID.PhantomKamaitachiReady) < 5 || HostileTarget != null && HostileTarget.HasStatus(true, StatusID.TrickAttack) || Player.HasStatus(true, StatusID.Bunshin) && HostileTarget != null && HostileTarget.HasStatus(true, StatusID.Mug)) &&
             PhantomKamaitachiPvE.EnoughLevel)
             if (PhantomKamaitachiPvE.CanUse(out act)) return true;
 
@@ -245,7 +246,7 @@ public sealed class NIN : NinjaRotation
                            InCombat && CombatTime > 6 &&
                            IsOffCooldown(MugPvE) &&
                            MugPvE.EnoughLevel)
-            if (MugPvE.CanUse(out act)) return true;
+                if (MugPvE.CanUse(out act)) return true;
 
             if (Player.HasStatus(true, StatusID.Suiton) && IsOffCooldown(TrickAttackPvE) && InCombat && CombatTime > 8)
                 if (TrickAttackPvE.CanUse(out act)) return true;
@@ -256,7 +257,7 @@ public sealed class NIN : NinjaRotation
             if (HostileTarget != null && HostileTarget.HasStatus(true, StatusID.TrickAttack_3254) || setupKassatsuWindow)
                 if (KassatsuPvE.CanUse(out act)) return true;
 
-            if (HostileTarget != null && HostileTarget.HasStatus(true, StatusID.TrickAttack) && Ninki >= 50 || (Ninki == 100 && IsOnCooldown(MugPvE)))
+            if (HostileTarget != null && HostileTarget.HasStatus(true, StatusID.TrickAttack) && Ninki >= 50 || Ninki == 100 && IsOnCooldown(MugPvE))
             {
                 if (HellfrogMediumPvE.CanUse(out act)) return true;
                 if (BhavacakraPvE.CanUse(out act)) return true;

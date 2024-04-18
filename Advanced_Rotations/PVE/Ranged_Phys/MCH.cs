@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using static FFXIVClientStructs.FFXIV.Client.Game.Control.GazeController;
 
-namespace RabbsRotations.Ranged;
+namespace RabbsRotationsNET8.PVE.Ranged_Phys;
 [Rotation("Rabbs Machinist (DO NOT USE YET)", CombatType.PvE, GameVersion = "6.58")]
 [SourceCode(Path = "main/RabbsRotations/Ranged/MCH.cs")]
 
@@ -45,7 +45,7 @@ public unsafe sealed class MCH : MachinistRotation
 
         if (remainTime < 0.2)
         {
-            
+
             if (IsOffCooldown(BarrelStabilizerPvE) && IsOffCooldown(AirAnchorPvE) && IsOffCooldown(WildfirePvE) && IsOffCooldown(ChainSawPvE) && IsOffCooldown(DrillPvE)
             && GaussRoundPvE.Cooldown.CurrentCharges == 3 && RicochetPvE.Cooldown.CurrentCharges == 3 && ReassemblePvE.Cooldown.CurrentCharges == 2
             && !InCombat && !inOpener && !openerStarted && Player.Level == 90)
@@ -56,12 +56,12 @@ public unsafe sealed class MCH : MachinistRotation
             }
             if ((readyOpener || openerStarted) && !inOpener) { openerStarted = true; } else { openerStarted = false; }
             if (HeatedSplitShotPvE.CanUse(out var act)) return act;
-            
+
         }
 
         if (remainTime < 2.0 && IsThereABoss)
         {
-            if (UseBurstMedicine(out var act, clippingCheck:false)) return act;
+            if (UseBurstMedicine(out var act, clippingCheck: false)) return act;
         }
 
         return base.CountDownAction(remainTime);
@@ -86,10 +86,10 @@ public unsafe sealed class MCH : MachinistRotation
 
     protected unsafe override bool GeneralGCD(out IAction? act)
     {
-        
+
         //opener
         if (openerStarted && IsLastGCD(true, HeatedSplitShotPvE)) { inOpener = true; openerStarted = false; readyOpener = false; }
-        
+
 
         // Reset check for opener
         if (IsOffCooldown(BarrelStabilizerPvE) && IsOffCooldown(AirAnchorPvE) && IsOffCooldown(WildfirePvE) && IsOffCooldown(ChainSawPvE) && IsOffCooldown(DrillPvE)
@@ -104,8 +104,8 @@ public unsafe sealed class MCH : MachinistRotation
         { readyOpener = false; }
 
         // Reset if opener is interrupted, requires step 0 and 1 to be explicit since the inCombat check can be slow
-        if ((step == 0 && IsLastAbility(true, GaussRoundPvE))
-            || (inOpener && step >= 1 && !InCombat)) inOpener = false;
+        if (step == 0 && IsLastAbility(true, GaussRoundPvE)
+            || inOpener && step >= 1 && !InCombat) inOpener = false;
 
         // Start Opener
         if (inOpener)
@@ -114,8 +114,8 @@ public unsafe sealed class MCH : MachinistRotation
             //we do it in steps to be able to control it
             if (step == 0)
             {
-                if (IsLastAbility(true,GaussRoundPvE)) step++;
-                else if(GaussRoundPvE.CanUse(out act)) return true;
+                if (IsLastAbility(true, GaussRoundPvE)) step++;
+                else if (GaussRoundPvE.CanUse(out act)) return true;
             }
             /*
             if (step == 1)
@@ -228,7 +228,7 @@ public unsafe sealed class MCH : MachinistRotation
             */
             inOpener = false;
         }
-        
+
         //1-2-3 Combo
         //aoe
         if (SpreadShotPvE.CanUse(out act)) return true;
@@ -243,8 +243,8 @@ public unsafe sealed class MCH : MachinistRotation
     }
 
     protected unsafe override bool AttackAbility(IAction nextGCD, out IAction? act)
-    { 
+    {
         return base.AttackAbility(nextGCD, out act);
     }
-    
+
 }

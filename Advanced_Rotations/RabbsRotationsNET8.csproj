@@ -4,7 +4,7 @@
         <TargetFramework>net8.0-windows</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Authors>Rabbs</Authors>
-        <Version>1.0.7</Version>
+        <Version>1.0.8</Version>
         <PlatformTarget>x64</PlatformTarget>
         <Platforms>x64</Platforms>
 
@@ -83,11 +83,14 @@
 
     <ItemGroup>
       <Folder Include="Duty\" />
-      <Folder Include="Magical\" />
+      <Folder Include="PVE\Ranged_Magic\" />
+      <Folder Include="PVP\Melee\" />
+      <Folder Include="PVP\Tank\" />
+      <Folder Include="PVP\Ranged_Magic\" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="RotationSolverReborn.Basic" Version="4.0.3.1" />
+      <PackageReference Include="RotationSolverReborn.Basic" Version="4.0.5.3" />
     </ItemGroup>
 
 </Project>

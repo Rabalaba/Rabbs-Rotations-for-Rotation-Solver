@@ -6,10 +6,11 @@ using System.Text;
 using System.Threading.Tasks;
 using static FFXIVClientStructs.FFXIV.Client.Game.Control.GazeController;
 
-namespace RabbsRotations.Melee;
+namespace RabbsRotationsNET8.PVE.Melee;
 [Rotation("Rabbs Dragoon", CombatType.PvE, GameVersion = "6.58")]
 [SourceCode(Path = "main/RabbsRotations/Melee/DRG.cs")]
-public sealed class DRG : DragoonRotation
+[Api(1)]
+public sealed class DRG_PVE : DragoonRotation
 {
     #region Rotation Config
 
@@ -41,7 +42,7 @@ public sealed class DRG : DragoonRotation
     {
 
         //1-2-3 Combo
-      
+
         if (CoerthanTormentPvE.CanUse(out act)) return true;
 
         if (SonicThrustPvE.CanUse(out act)) return true;
@@ -52,7 +53,7 @@ public sealed class DRG : DragoonRotation
 
         if (WheelingThrustPvE.CanUse(out act)) return true;
 
-        if ((LevelChecked(ChaosThrustPvE) && HostileTarget != null && (!HostileTarget.HasStatus(true, StatusID.ChaoticSpring, StatusID.ChaosThrust) || HostileTarget.WillStatusEnd(6, true, StatusID.ChaoticSpring, StatusID.ChaosThrust))) || Player.WillStatusEnd(10, true, StatusID.PowerSurge, StatusID.PowerSurge_2720))
+        if (LevelChecked(ChaosThrustPvE) && HostileTarget != null && (!HostileTarget.HasStatus(true, StatusID.ChaoticSpring, StatusID.ChaosThrust) || HostileTarget.WillStatusEnd(6, true, StatusID.ChaoticSpring, StatusID.ChaosThrust)) || Player.WillStatusEnd(10, true, StatusID.PowerSurge, StatusID.PowerSurge_2720))
         {
             if (DisembowelPvE.CanUse(out act)) return true;
 
@@ -95,10 +96,10 @@ public sealed class DRG : DragoonRotation
 
                 //Life Surge Feature
                 if (!HasEffect(StatusID.LifeSurge) &&
-                    ((HasEffect(StatusID.RightEye) && HasEffect(StatusID.LanceCharge) && IsLastGCD(true, VorpalThrustPvE)) ||
-                    (HasEffect(StatusID.LanceCharge) && IsLastGCD(true, VorpalThrustPvE)) ||
-                    (HasEffect(StatusID.RightEye) && HasEffect(StatusID.LanceCharge) && (HasEffect(StatusID.WheelInMotion) || HasEffect(StatusID.FangAndClawBared))) ||
-                    (IsOnCooldown(DragonSightPvE) && IsOnCooldown(LanceChargePvE) && IsLastGCD(true, VorpalThrustPvE))))
+                    (HasEffect(StatusID.RightEye) && HasEffect(StatusID.LanceCharge) && IsLastGCD(true, VorpalThrustPvE) ||
+                    HasEffect(StatusID.LanceCharge) && IsLastGCD(true, VorpalThrustPvE) ||
+                    HasEffect(StatusID.RightEye) && HasEffect(StatusID.LanceCharge) && (HasEffect(StatusID.WheelInMotion) || HasEffect(StatusID.FangAndClawBared)) ||
+                    IsOnCooldown(DragonSightPvE) && IsOnCooldown(LanceChargePvE) && IsLastGCD(true, VorpalThrustPvE)))
                     if (LifeSurgePvE.CanUse(out act, usedUp: true)) return true;
                 //Wyrmwind Thrust Feature
                 if (WyrmwindThrustPvE.CanUse(out act, skipAoeCheck: true)) return true;

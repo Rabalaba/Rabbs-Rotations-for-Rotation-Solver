@@ -6,8 +6,9 @@ using System.Text;
 using System.Threading.Tasks;
 using static FFXIVClientStructs.FFXIV.Client.Game.Control.GazeController;
 
-namespace RabbsRotations.Ranged;
+namespace RabbsRotationsNET8.PVE.Ranged_Phys;
 [Rotation("Rabbs Dancer PVE & PVP", CombatType.Both, GameVersion = "6.58")]
+[Api(1)]
 [SourceCode(Path = "main/RabbsRotations/Ranged/DNC.cs")]
 
 
@@ -47,16 +48,7 @@ public unsafe sealed class DNC : DancerRotation
     {
         var IsTargetDying = HostileTarget?.IsDying() ?? false;
 
-        #region pvp
-        if (AllHostileTargets.Any(p => p.DistanceToPlayer() < 5) && HoningDancePvP.CanUse(out act, skipAoeCheck:true)) return true;
 
-        if (StarfallDancePvP.CanUse(out act)) return true;
-
-        if (FountainPvP.CanUse(out act)) return true;
-
-        if (CascadePvP.CanUse(out act)) return true;
-
-        #endregion
 
         #region GCD
         if (IsDancing)
@@ -71,8 +63,8 @@ public unsafe sealed class DNC : DancerRotation
         if (!Player.HasStatus(true, StatusID.TechnicalFinish))
         {
             if (AllHostileTargets.Any(p => !p.IsDying() && p.DistanceToPlayer() < 10 && p.IsTargetable) &&
-                (TechnicalStepPvE.Cooldown.RecastTimeRemainOneCharge > 5) &&
-                (!FlourishPvE.Cooldown.IsCoolingDown || (FlourishPvE.Cooldown.RecastTimeRemainOneCharge > 5)))
+                TechnicalStepPvE.Cooldown.RecastTimeRemainOneCharge > 5 &&
+                (!FlourishPvE.Cooldown.IsCoolingDown || FlourishPvE.Cooldown.RecastTimeRemainOneCharge > 5))
                 if (StandardStepPvE.CanUse(out act)) return true;
         }
 
@@ -86,7 +78,7 @@ public unsafe sealed class DNC : DancerRotation
         if (TechnicalStepPvE.Cooldown.RecastTimeRemainOneCharge > 5 || !TechnicalStepPvE.Cooldown.IsCoolingDown)
         {
             if (Esprit >= 85 ||
-                (Player.HasStatus(true, StatusID.TechnicalFinish) && Esprit >= 50))
+                Player.HasStatus(true, StatusID.TechnicalFinish) && Esprit >= 50)
                 if (SaberDancePvE.CanUse(out act, skipAoeCheck: true)) return true;
         }
 
@@ -94,14 +86,14 @@ public unsafe sealed class DNC : DancerRotation
             if (StarfallDancePvE.CanUse(out act, skipAoeCheck: true)) return true;
 
         if (Player.HasStatus(true, StatusID.FlourishingFinish))
-            if (TillanaPvE.CanUse(out act,skipAoeCheck: true)) return true;
+            if (TillanaPvE.CanUse(out act, skipAoeCheck: true)) return true;
 
         // ST Standard Step (inside of burst)
-        if (AllHostileTargets.Any(p => !p.IsDying() && p.DistanceToPlayer() < 10) && 
+        if (AllHostileTargets.Any(p => !p.IsDying() && p.DistanceToPlayer() < 10) &&
             Player.HasStatus(true, StatusID.TechnicalFinish))
         {
             if (!IsTargetDying &&
-                (Player.StatusTime(true, StatusID.TechnicalFinish) > 5))
+                Player.StatusTime(true, StatusID.TechnicalFinish) > 5)
                 if (StandardStepPvE.CanUse(out act)) return true;
         }
 
@@ -122,20 +114,7 @@ public unsafe sealed class DNC : DancerRotation
 
     protected unsafe override bool AttackAbility(IAction nextGCD, out IAction? act)
     {
-        #region pvp
 
-        if (Player.MaxHp - Player.CurrentHp >= 10000)
-        {
-            if (CuringWaltzPvP.CanUse(out act)) return true;
-        }
-        if (HasHostilesInRange && !Player.HasStatus(false, StatusID.FlourishingSaberDance, StatusID.EnAvant))
-        if (EnAvantPvP.CanUse(out act, usedUp:true)) return true;
-
-        if (FanDancePvP.CanUse(out act, skipAoeCheck:true,  usedUp:true)) return true;
-
-
-
-        #endregion
         if (IsDancing)
         {
             if (DanceFinishGCD(out act)) return true;
@@ -143,7 +122,7 @@ public unsafe sealed class DNC : DancerRotation
         }
         var IsTargetDying = HostileTarget?.IsDying() ?? false;
 
-        if (Player.HasStatus(true, StatusID.TechnicalFinish)  || !TechnicalStepPvE.EnoughLevel)
+        if (Player.HasStatus(true, StatusID.TechnicalFinish) || !TechnicalStepPvE.EnoughLevel)
             if (DevilmentPvE.CanUse(out act)) return true;
 
         // ST Flourish
@@ -153,7 +132,7 @@ public unsafe sealed class DNC : DancerRotation
 
 
         if (Player.HasStatus(true, StatusID.ThreefoldFanDance))
-            if (FanDanceIiiPvE.CanUse(out act, skipAoeCheck:true)) return true;
+            if (FanDanceIiiPvE.CanUse(out act, skipAoeCheck: true)) return true;
 
         // FD1 HP% Dump
         if (IsTargetDying && Feathers > 0)

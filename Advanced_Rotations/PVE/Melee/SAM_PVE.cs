@@ -1,10 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace RabbsRotations.Melee;
+namespace RabbsRotationsNET8.PVE.Melee;
 
 [Rotation("Rabbs Samurai", CombatType.PvE, GameVersion = "6.58")]
 [SourceCode(Path = "main/RabbsRotations/Melee/SAM.cs")]
-public sealed class SAM : SamuraiRotation
+[Api(1)]
+public sealed class SAM_PVE : SamuraiRotation
 {
 
     [RotationSolver.Basic.Attributes.Range(25, 85, ConfigUnitType.None, 5)]
@@ -54,7 +55,7 @@ public sealed class SAM : SamuraiRotation
         {
             if (MeikyoShisuiPvE.CanUse(out var act)) return act;
         }
-        
+
 
 
         return base.CountDownAction(remainTime);
@@ -91,7 +92,7 @@ public sealed class SAM : SamuraiRotation
                 if (MidareSetsugekkaPvE.CanUse(out act)) return true; // Only return true if Midare is usable
             }
 
-            
+
 
             // Remaining Skills (Gekko > Kasha > Yukikaze)
             if (!HasGetsu) // Gekko can be used if not under Getsu buff, Mangetsu if aoe
@@ -114,12 +115,12 @@ public sealed class SAM : SamuraiRotation
             // Default Yukikaze if others are not usable
             if (YukikazePvE.CanUse(out act, skipComboCheck: true)) return true;
         }
-        
-        
 
-        if (SenCount == 1 && (Player.HasStatus(true, StatusID.OgiNamikiriReady) || (HostileTarget != null && HostileTarget.WillStatusEnd(10, true, StatusID.Higanbana))))
+
+
+        if (SenCount == 1 && (Player.HasStatus(true, StatusID.OgiNamikiriReady) || HostileTarget != null && HostileTarget.WillStatusEnd(10, true, StatusID.Higanbana)))
         {
-            if (HasMoon && HasFlower && HiganbanaPvE.CanUse(out act, skipStatusProvideCheck : true)) return true;
+            if (HasMoon && HasFlower && HiganbanaPvE.CanUse(out act, skipStatusProvideCheck: true)) return true;
         }
         if (SenCount == 2)
         {
@@ -156,7 +157,7 @@ public sealed class SAM : SamuraiRotation
         var SkillSpeed = aState.Attributes[45];
         var isOddMinute = IsOddMinute();
         if (IsBurst && UseBurstMedicine(out act)) return true;
-        var fillerSelect = SkillSpeed <= 648 ? (isOddMinute ? 2 : 0) : 1;
+        var fillerSelect = SkillSpeed <= 648 ? isOddMinute ? 2 : 0 : 1;
 
         if (fillerSelect == 2 && (HostileTarget?.WillStatusEnd(50, true, StatusID.Higanbana) ?? false) && !(HostileTarget?.WillStatusEnd(16, true, StatusID.Higanbana) ?? false) && SenCount == 1 && IsLastAction(true, YukikazePvE) && !HaveMeikyoShisui && !RecordActions[0..30].Any(x => x.Action.RowId == HagakurePvE.ID))
         {
@@ -164,7 +165,7 @@ public sealed class SAM : SamuraiRotation
         }
         if (KaeshiNamikiriPvE.EnoughLevel && !HaveMeikyoShisui && InCombat)
         {
-            if (IsLastAbility(true, KaeshiSetsugekkaPvE) || !HasMoon || !HasFlower || (SenCount == 0 && !KaeshiSetsugekkaPvE.IsEnabled) || MeikyoShisuiPvE.Cooldown.CurrentCharges == 2)
+            if (IsLastAbility(true, KaeshiSetsugekkaPvE) || !HasMoon || !HasFlower || SenCount == 0 && !KaeshiSetsugekkaPvE.IsEnabled || MeikyoShisuiPvE.Cooldown.CurrentCharges == 2)
             {
                 if (MeikyoShisuiPvE.CanUse(out act, usedUp: true)) return true;
             }
