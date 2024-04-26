@@ -40,7 +40,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            ./build/RabbsRotations.dll
-            ./build/RabbsRotations.pdb
+            ./build/RabbsRotationsNET8.dll
+            ./build/RabbsRotationsNET8.pdb
           token: ${{ secrets.GITHUB_TOKEN }}
 
