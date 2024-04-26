@@ -4,6 +4,7 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 namespace RabbsRotations.Healer;
 
 [Rotation("Rabbs WHM PVP", CombatType.PvP, GameVersion = "6.58")]
+[Api(1)]
 public sealed class WHM_PVP :WhiteMageRotation
 {
     public static IBaseAction AfflatusPurgationpPvP { get; } = new BaseAction((ActionID)29230);

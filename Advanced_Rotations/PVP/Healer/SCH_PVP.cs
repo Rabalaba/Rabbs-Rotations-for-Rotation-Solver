@@ -8,13 +8,25 @@ namespace RabbsRotations.Healer;
 public sealed class SCH_PVP : ScholarRotation
 {
 
-    public static BaseAction DeployThis { get; } = new BaseAction((ActionID)29234);
+    //public static BaseAction DeployThis { get; } = new BaseAction((ActionID)29234);
 
-    public static void SetDeployThis()
+    public IBaseAction DeploythisPvP => _DeploythisPvP.Value;
+
+    private readonly Lazy<IBaseAction> _DeploythisPvP = new Lazy<IBaseAction>(delegate
     {
-        DeployThis.Setting.TargetType = TargetType.BeAttacked; // Assuming appropriate access
-        DeployThis.Setting.TargetStatusNeed = [StatusID.Biolysis_3089];
+        IBaseAction actionx = new BaseAction(ActionID.DeploymentTacticsPvP);
+        ActionSetting settingx = actionx.Setting;
+        ModifyDeployThis(ref settingx);
+        actionx.Setting = settingx;
+        return actionx;
+    });
+
+    public static void ModifyDeployThis(ref ActionSetting setting)
+    {
+        setting.TargetType = TargetType.BeAttacked; // Assuming appropriate access
+        setting.TargetStatusNeed = [StatusID.Biolysis_3089];
     }
+
 
     protected override bool EmergencyAbility(IAction nextGCD, out IAction? act)
     {
@@ -26,10 +38,10 @@ public sealed class SCH_PVP : ScholarRotation
     protected override bool GeneralGCD(out IAction? act)
     {
         var targetable = HostileTarget != null && HostileTarget.ObjectKind is ObjectKind.Player && !HostileTarget.HasStatus(true, StatusID.Guard, StatusID.HallowedGround_1302, StatusID.UndeadRedemption);
-        var ShouldAdlo = AllianceMembers.Any(p => (p.CurrentHp / p.MaxHp < 0.75) && p.DistanceToPlayer() < 30);
+        var ShouldAdlo = AllianceMembers.Any(p => p.IsDying() && p.DistanceToPlayer() < 30);
 
         if (ShouldAdlo)
-            if (AdloquiumPvP.CanUse(out act, usedUp:true) && AdloquiumPvP.Target.Target != null && !AdloquiumPvP.Target.Target.HasStatus(true, StatusID.Galvanize_3087)) return true;
+            if (AdloquiumPvP.CanUse(out act) && AdloquiumPvP.Target.Target != null && !AdloquiumPvP.Target.Target.HasStatus(true, StatusID.Galvanize_3087)) return true;
 
         if (targetable && DeploymentTacticsPvP.Cooldown.HasOneCharge && (Player.HasStatus(true, StatusID.Recitation_3094) || ExpedientPvP.Cooldown.RecastTimeRemainOneCharge > 10))
         {
@@ -46,7 +58,7 @@ public sealed class SCH_PVP : ScholarRotation
     protected override bool HealSingleGCD(out IAction? act)
     {
 
-
+        if (AdloquiumPvP.CanUse(out act) && AdloquiumPvP.Target.Target != null && !AdloquiumPvP.Target.Target.HasStatus(true, StatusID.Galvanize_3087)) return true;
         return base.HealSingleGCD(out act);
     }
 
@@ -68,7 +80,7 @@ public sealed class SCH_PVP : ScholarRotation
     protected override bool HealAreaGCD(out IAction? act)
     {
 
-
+        if (AdloquiumPvP.CanUse(out act) && AdloquiumPvP.Target.Target != null && !AdloquiumPvP.Target.Target.HasStatus(true, StatusID.Galvanize_3087)) return true;
         return base.HealAreaGCD(out act);
     }
 
@@ -99,14 +111,13 @@ public sealed class SCH_PVP : ScholarRotation
     {
         var targetable = HostileTarget != null && HostileTarget.ObjectKind is ObjectKind.Player && !HostileTarget.HasStatus(true, StatusID.Guard, StatusID.HallowedGround_1302, StatusID.UndeadRedemption);
         var CanSpread = AllHostileTargets.Any(p => !p.IsDying() && p.DistanceToPlayer() < 30);
-        DeployThis.Target = BroilIvPvP.Target;
         if (targetable)
         {
             if (!BiolysisPvP.Cooldown.IsCoolingDown && !Player.HasStatus(true, StatusID.Recitation_3094))
             {
                 if (ExpedientPvP.CanUse(out act, skipAoeCheck:true)) return true;
             }
-            if (DeploymentTacticsPvP.CanUse(out act, skipClippingCheck:true, skipAoeCheck:true) && DeploymentTacticsPvP.Target.Target != null && DeploymentTacticsPvP.Target.Target.HasStatus(true,StatusID.Biolysis_3089)) return true;
+            if (DeploythisPvP.CanUse(out act, skipClippingCheck:true, skipAoeCheck:true)) return true;
             if (MummificationPvP.CanUse(out act, skipAoeCheck:true)) return true;
         }
 

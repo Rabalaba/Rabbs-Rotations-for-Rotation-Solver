@@ -13,7 +13,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 
 namespace RabbsRotationsNET8.PVE.Melee;
 [Rotation("Rabbs Ninja(DO NOT USE YET)", CombatType.PvE, GameVersion = "6.58")]
-//[Api(1)]
+[Api(1)]
 [SourceCode(Path = "main/RabbsRotations/Melee/NIN.cs")]
 
 public sealed class NIN_PVE : NinjaRotation
@@ -22,6 +22,7 @@ public sealed class NIN_PVE : NinjaRotation
     private static readonly MudraCasting mudraCasting = new();
     private static bool inTCJ => Player.HasStatus(true, StatusID.TenChiJin);
     private static readonly MudraCasting mudraState = new();
+    private bool InTrickAttack => TrickAttackPvE.Cooldown.IsCoolingDown && !TrickAttackPvE.Cooldown.ElapsedAfter(17);
 
     protected override IAction? CountDownAction(float remainTime)
     {
@@ -86,6 +87,15 @@ public sealed class NIN_PVE : NinjaRotation
         if (AdjustId(ActionID.NinjutsuPvE) is ActionID.RabbitMediumPvE)
             if (RabbitMediumPvE.CanUse(out act)) return true;
 
+        if (mudraState.CastGokaMekkyaku(out actionID))
+        {
+            IBaseAction Thisaction = new BaseAction((ActionID)actionID);
+            if (actionID != 0)
+            {
+                if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
+            }
+        }
+
         if (Player.HasStatus(true, StatusID.Kassatsu) && HostileTarget != null && HostileTarget.HasStatus(true, StatusID.TrickAttack) && MugPvE.Cooldown.IsCoolingDown)
             mudraState.CurrentMudra = MudraCasting.MudraState.CastingHyoshoRanryu;
 
@@ -121,7 +131,6 @@ public sealed class NIN_PVE : NinjaRotation
                 setupSuitonWindow &&
                 TrickAttackPvE.EnoughLevel &&
                 !Player.HasStatus(true, StatusID.Suiton) &&
-                chargeCheck &&
                 mudraState.CastSuiton(out actionID))
             {
                 IBaseAction Thisaction = new BaseAction((ActionID)actionID);
@@ -130,7 +139,7 @@ public sealed class NIN_PVE : NinjaRotation
                     if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
                 }
             }
-
+            
             if (true &&
                 !inTrickBurstSaveWindow &&
                 chargeCheck &&
@@ -143,9 +152,43 @@ public sealed class NIN_PVE : NinjaRotation
                     if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
                 }
             }
+            
+
 
             if (HostileTarget != null && !Player.HasStatus(true, StatusID.RaijuReady) && !inMudraState)
                 if (ThrowingDaggerPvE.CanUse(out act)) return true;
+        }
+
+        if (NumberOfAllHostilesInRange >= 3)
+        {
+            if (RecordActions != null)
+            {
+                // Limit to the most recent 10 elements (or less if RecordActions has fewer elements)
+                var recentActions = RecordActions.Take(10);
+
+                if (!recentActions.Any(x => x.Action.RowId == DotonPvE.ID || x.Action.RowId == DotonPvE_18880.ID) && !Player.HasStatus(true, StatusID.Doton))
+                {
+                    if (mudraState.CastDoton(out actionID))
+                    {
+                        IBaseAction Thisaction = new BaseAction((ActionID)actionID);
+                        if (actionID != 0)
+                        {
+                            if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
+                        }
+                    }
+                }
+            }
+
+
+
+            if (mudraState.CastKaton(out actionID))
+            {
+                IBaseAction Thisaction = new BaseAction((ActionID)actionID);
+                if (actionID != 0)
+                {
+                    if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
+                }
+            }
         }
 
         if (Player.HasStatus(true, StatusID.RaijuReady))
@@ -186,7 +229,6 @@ public sealed class NIN_PVE : NinjaRotation
         if (InCombat && setupSuitonWindow &&
             TrickAttackPvE.EnoughLevel &&
             !Player.HasStatus(true, StatusID.Suiton) &&
-            chargeCheck &&
             mudraState.CastSuiton(out actionID))
         {
             IBaseAction Thisaction = new BaseAction((ActionID)actionID);
@@ -195,7 +237,7 @@ public sealed class NIN_PVE : NinjaRotation
                 if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
             }
         }
-
+        
         if (!inTrickBurstSaveWindow &&
                     chargeCheck &&
                     poolCharges &&
@@ -207,6 +249,17 @@ public sealed class NIN_PVE : NinjaRotation
                 if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
             }
         }
+
+        if (InTrickAttack &&
+                    mudraState.CastRaiton(out actionID))
+        {
+            IBaseAction Thisaction = new BaseAction((ActionID)actionID);
+            if (actionID != 0)
+            {
+                if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
+            }
+        }
+
 
         if (!RaitonPvE.EnoughLevel &&
                     chargeCheck &&
@@ -238,7 +291,8 @@ public sealed class NIN_PVE : NinjaRotation
     protected unsafe override bool AttackAbility(IAction nextGCD, out IAction? act)
     {
         bool setupKassatsuWindow = GetCooldownRemainingTime(TrickAttackPvE) <= 10 && Player.HasStatus(true, StatusID.Suiton);
-        bool inTrickBurstSaveWindow = GetCooldownRemainingTime(TrickAttackPvE) <= 15;
+        bool inTrickBurstSaveWindow = TrickAttackPvE.Cooldown.IsCoolingDown && TrickAttackPvE.Cooldown.WillHaveOneCharge(15);
+
         if (!inMudraState && !inTCJ)
         {
             if (Player.HasStatus(true, StatusID.Suiton) &&
@@ -262,11 +316,12 @@ public sealed class NIN_PVE : NinjaRotation
                 if (HellfrogMediumPvE.CanUse(out act)) return true;
                 if (BhavacakraPvE.CanUse(out act)) return true;
             }
-            if (!inTrickBurstSaveWindow)
-            {
 
-                if (HostileTarget != null && HostileTarget.HasStatus(true, StatusID.TrickAttack))
-                    if (MugPvE.CanUse(out act)) return true;
+            if (InTrickAttack)
+            {
+                if (MugPvE.CanUse(out act)) return true;
+
+                if (TenChiJinPvE.CanUse(out act)) return true;
 
                 if (Player.HasStatus(true, StatusID.Suiton) && Ninki <= 50)
                     if (MeisuiPvE.CanUse(out act)) return true;
@@ -279,10 +334,7 @@ public sealed class NIN_PVE : NinjaRotation
 
                 if (AssassinatePvE.CanUse(out act)) return true;
 
-                if (!IsMoving)
-                    if (TenChiJinPvE.CanUse(out act)) return true;
             }
-            if (!IsMoving && TrickAttackPvE.Cooldown.IsCoolingDown && !TrickAttackPvE.Cooldown.ElapsedAfter(17) && !TenPvE.Cooldown.ElapsedAfter(30) && TenChiJinPvE.CanUse(out act)) return true;
 
         }
 
