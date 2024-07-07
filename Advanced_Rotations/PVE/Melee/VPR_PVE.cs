@@ -65,13 +65,17 @@ public sealed class VPR_Default : ViperRotation
         if (SecondLegacyPvE.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true) && SerpentsTailId == SecondLegacyPvE.ID) return true;
         if (ThirdLegacyPvE.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true) && SerpentsTailId == ThirdLegacyPvE.ID) return true;
         if (FourthLegacyPvE.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true) && SerpentsTailId == FourthLegacyPvE.ID) return true;
+        if (MergedStatus.HasFlag(AutoStatus.MoveForward) && MoveForwardAbility(nextGCD, out act)) return true;
         return base.AttackAbility(nextGCD, out act);
     }
 
     protected override bool MoveForwardAbility(IAction nextGCD, out IAction? act)
     {
         act = null;
-
+        if (!IsMoving && SlitherPvE.Target.Target.DistanceToPlayer() > 5)
+        {
+            if (SlitherPvE.CanUse(out act)) return true;
+        }
 
         return base.MoveForwardAbility(nextGCD, out act);
     }
