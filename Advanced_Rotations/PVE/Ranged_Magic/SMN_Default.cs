@@ -4,7 +4,7 @@ namespace RabbsRotationsNET8.Magical;
 
 [Rotation("Rabbs SMN", CombatType.PvE, GameVersion = "6.58")]
 [SourceCode(Path = "main/DefaultRotations/Magical/SMN_Default.cs")]
-[Api(1)]
+[Api(2)]
 public sealed class SMN_Default : SummonerRotation
 {
     #region Config Options
@@ -113,8 +113,7 @@ public sealed class SMN_Default : SummonerRotation
         if ((Player.HasStatus(false, StatusID.SearingLight) && InBahamut && (SummonBahamutPvE.Cooldown.ElapsedOneChargeAfterGCD(3) || !EnergyDrainPvE.Cooldown.IsCoolingDown) || EnergyDrainPvE.Cooldown.RecastTimeRemainOneCharge < 5 ||
             !SearingLightPvE.EnoughLevel || IsTargetBoss && IsTargetDying) && PainflarePvE.CanUse(out act)) return true;
 
-        if ((Player.HasStatus(false, StatusID.SearingLight) && InBahamut && (SummonBahamutPvE.Cooldown.ElapsedOneChargeAfterGCD(3) || !EnergyDrainPvE.Cooldown.IsCoolingDown) || EnergyDrainPvE.Cooldown.RecastTimeRemainOneCharge < 5 ||
-            !SearingLightPvE.EnoughLevel || IsTargetBoss && IsTargetDying) && FesterPvE.CanUse(out act)) return true;
+        if ((InBahamut || InSolarBahamut && Player.HasStatus(false, StatusID.SearingLight) && (SummonBahamutPvE.Cooldown.ElapsedOneChargeAfterGCD(4) || !EnergyDrainPvE.Cooldown.IsCoolingDown) || !SearingLightPvE.EnoughLevel || IsTargetBoss && IsTargetDying) && FesterPvE.CanUse(out act) || NecrotizePvE.CanUse(out act)) return true;
 
         if (EnergySiphonPvE.CanUse(out act)) return true;
         if (EnergyDrainPvE.CanUse(out act)) return true;
