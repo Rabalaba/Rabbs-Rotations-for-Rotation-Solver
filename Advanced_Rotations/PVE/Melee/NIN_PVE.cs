@@ -10,15 +10,23 @@ using RotationSolver.Basic.Data;
 using static RabbsRotations.Job_Helpers.CustomComboFunctions;
 using Lumina.Excel.GeneratedSheets;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.Game.Gauge;
+using Dalamud.Game.ClientState.JobGauge.Types;
+using Svg.FilterEffects;
+using Dalamud.Plugin.Services;
 
 namespace RabbsRotationsNET8.PVE.Melee;
-[Rotation("Rabbs Ninja(DO NOT USE YET)", CombatType.PvE, GameVersion = "6.58")]
+[Rotation("Rabbs Ninja", CombatType.PvE, GameVersion = "6.58")]
 [Api(1)]
 [SourceCode(Path = "main/RabbsRotations/Melee/NIN.cs")]
 
-public sealed class NIN_PVE : NinjaRotation
+public unsafe sealed class NIN_PVE : NinjaRotation
 {
     private static bool inMudraState => Player.HasStatus(true, StatusID.Mudra);
+
+    public static IJobGauges JobGauges { get; private set; } = null!;
+    private static NinjaGauge* gauge = (NinjaGauge*)NIN_PVE.JobGauges.Get<NINGauge>().Address;
+    private static byte stacks = gauge->Kazematoi;
     private static readonly MudraCasting mudraCasting = new();
     private static bool inTCJ => Player.HasStatus(true, StatusID.TenChiJin);
     private static readonly MudraCasting mudraState = new();
@@ -42,6 +50,13 @@ public sealed class NIN_PVE : NinjaRotation
         bool inTrickBurstSaveWindow = GetCooldownRemainingTime(TrickAttackPvE) <= 15 && SuitonPvE.EnoughLevel;
         bool poolCharges = GetRemainingCharges(TenPvE) == 1 && TenPvE.Cooldown.RecastTimeRemainOneCharge < 2 || HostileTarget != null && HostileTarget.HasStatus(true, StatusID.TrickAttack);
         uint actionID = 0;
+
+        if (stacks != 0)
+        {
+            if (SpinningEdgePvE.CanUse(out act)) return true;
+        }
+
+        /*
         if (inTCJ)
         {
             uint tenId = AdjustId(TenPvE.ID);
@@ -271,7 +286,7 @@ public sealed class NIN_PVE : NinjaRotation
             if (GustSlashPvE.CanUse(out act)) return true;
             if (SpinningEdgePvE.CanUse(out act)) return true;
         }
-
+        */
         return base.GeneralGCD(out act);
     }
 

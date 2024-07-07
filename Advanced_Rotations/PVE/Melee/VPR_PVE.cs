@@ -15,10 +15,14 @@ public sealed class VPR_Default : ViperRotation
     private static bool HaveHuntersInstinct => Player.HasStatus(true, StatusID.HuntersInstinct, StatusID.HuntersInstinct_4120);
     private static bool HaveHuntersVenom => Player.HasStatus(true, StatusID.HuntersVenom);
     private static bool HaveSwiftVenom => Player.HasStatus(true, StatusID.SwiftskinsVenom);
+    private static bool HaveFellHuntersVenom => Player.HasStatus(true, StatusID.FellhuntersVenom);
+    private static bool HaveFellskintVenom => Player.HasStatus(true, StatusID.FellskinsVenom);
     private static bool HavePoisedFang => Player.HasStatus(true, StatusID.PoisedForTwinfang);
     private static bool HavePoisedBlood => Player.HasStatus(true, StatusID.PoisedForTwinblood);
     private static bool HaveFlankingVenom => Player.HasStatus(true, StatusID.FlankstungVenom, StatusID.FlanksbaneVenom);
     private static bool HaveHindVenom => Player.HasStatus(true, StatusID.HindsbaneVenom, StatusID.HindstungVenom);
+    private static bool HaveGrimHuntersVenom => Player.HasStatus(true, StatusID.GrimhuntersVenom);
+    private static bool HaveGrimSkinVenom => Player.HasStatus(true, StatusID.GrimskinsVenom);
     private static int MyGeneration => EnhancedSerpentsLineageTrait.EnoughLevel ? 6-AnguineTribute:5-AnguineTribute;
     public static IBaseAction ThisCoil { get; } = new BaseAction((ActionID)34645);
     public static IBaseAction UnCoilCoil { get; } = new BaseAction((ActionID)34633);
@@ -49,6 +53,8 @@ public sealed class VPR_Default : ViperRotation
         int ComboMark2 = ComboMark == SteelFangsPvE.ID ? 1 : ComboMark == HuntersStingPvE.ID ? 2 : 3;
         act = null;
         if (SerpentsIrePvE.CanUse(out act) && InCombat && RattlingCoilStacks <= 2 && !HaveReawakend) return true;
+        if (TwinfangThreshPvE.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true) && HaveFellHuntersVenom) return true;
+        if (TwinbloodThreshPvE.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true) && HaveFellskintVenom) return true;
         if (TwinfangBitePvE.CanUse(out act) && HaveHuntersVenom) return true;
         if (TwinbloodBitePvE.CanUse(out act) && HaveSwiftVenom) return true;
         if (UncoiledTwinfangPvE.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true) && HavePoisedFang) return true;
@@ -83,6 +89,8 @@ public sealed class VPR_Default : ViperRotation
     {
         uint ComboMark = AdjustId(SteelFangsPvE.ID);
         int ComboMark2 = ComboMark == SteelFangsPvE.ID ? 1 : ComboMark == HuntersStingPvE.ID ? 2 : 3;
+        uint ComboMark3 = AdjustId(SteelMawPvE.ID);
+        int ComboMark4 = ComboMark3 == SteelMawPvE.ID ? 1 : ComboMark == HuntersBitePvE.ID ? 2 : 3;
         act = null;
         if (MyGeneration is 1)
         {
@@ -115,7 +123,7 @@ public sealed class VPR_Default : ViperRotation
         }
 
 
-        if (RattlingCoilStacks > 0  && DreadCombo is (DreadCombo)0 &&
+        if (RattlingCoilStacks > 0  && DreadCombo is (DreadCombo)0 && !Player.HasStatus(true, StatusID.ReadyToReawaken) &&
             !HaveSwiftVenom && !HaveHuntersVenom &&
             HaveSwiftScaled && HaveHuntersInstinct)
         {
@@ -124,17 +132,28 @@ public sealed class VPR_Default : ViperRotation
 
 
 
-        if (HuntersDenPvE.CanUse(out act, skipComboCheck: true) && DreadCombo == DreadCombo.PitOfDread) return true;
-        if (SwiftskinsDenPvE.CanUse(out act, skipComboCheck: true) && DreadCombo == DreadCombo.HuntersDen) return true;
+        if (HuntersDenPvE.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true) && DreadCombo == DreadCombo.PitOfDread) return true;
+        if (SwiftskinsDenPvE.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true) && DreadCombo == DreadCombo.HuntersDen) return true;
         if (HuntersCoilPvE.CanUse(out act, skipComboCheck: true) && DreadCombo == DreadCombo.Dreadwinder) return true;
         if (SwiftskinsCoilPvE.CanUse(out act, skipComboCheck: true) && DreadCombo == DreadCombo.HuntersCoil) return true;
 
+        if (ComboMark4 == 2)
+        {
+            if (SteelMawPvE.CanUse(out act) && HaveGrimHuntersVenom) return true;
+            if (DreadMawPvE.CanUse(out act) && HaveGrimSkinVenom) return true;
+        }
+
         if (ComboMark2 == 2)
         {
-            if (SteelMawPvE.CanUse(out act) && HaveFlankingVenom) return true;
-            if (DreadMawPvE.CanUse(out act) && HaveHindVenom) return true;
+
             if (SteelFangsPvE.CanUse(out act) && HaveFlankingVenom) return true;
             if (DreadFangsPvE.CanUse(out act) && HaveHindVenom) return true;
+        }
+
+        if (ComboMark4 == 3)
+        {
+            if (SteelMawPvE.CanUse(out act) && HaveGrimHuntersVenom) return true;
+            if (DreadMawPvE.CanUse(out act) && HaveGrimSkinVenom) return true;
         }
         if (ComboMark2 == 3)
         {

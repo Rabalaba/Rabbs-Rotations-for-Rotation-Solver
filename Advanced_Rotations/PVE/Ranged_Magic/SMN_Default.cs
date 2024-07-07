@@ -4,7 +4,7 @@ namespace RabbsRotationsNET8.Magical;
 
 [Rotation("Rabbs SMN", CombatType.PvE, GameVersion = "6.58")]
 [SourceCode(Path = "main/DefaultRotations/Magical/SMN_Default.cs")]
-[Api(2)]
+[Api(1)]
 public sealed class SMN_Default : SummonerRotation
 {
     #region Config Options
