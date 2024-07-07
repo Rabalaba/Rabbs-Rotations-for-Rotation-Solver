@@ -10,7 +10,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using static FFXIVClientStructs.FFXIV.Client.Game.Control.GazeController;
+//using static FFXIVClientStructs.FFXIV.Client.Game.Control.GazeController;
 
 namespace RabbsRotationsNET8.PVE.Ranged_Phys;
 [Rotation("Rabbs Machinist (DO NOT USE YET)", CombatType.PvE, GameVersion = "6.58")]
@@ -39,8 +39,8 @@ public unsafe sealed class MCH : MachinistRotation
 
     protected override IAction? CountDownAction(float remainTime)
     {
-        var IsThereABoss = AllHostileTargets.Any(p => p.IsBossFromTTK()) || AllHostileTargets.Any(p => p.IsBossFromIcon());
-        int medicaThreshold = PartyMembers.Where(o => o.DistanceToPlayer() < 20).Count();
+       // var IsThereABoss = AllHostileTargets.Any(p => p.IsBossFromTTK()) || AllHostileTargets.Any(p => p.IsBossFromIcon());
+       // int medicaThreshold = PartyMembers.Where(o => o.DistanceToPlayer() < 20).Count();
 
 
         if (remainTime < 0.2)
@@ -48,7 +48,7 @@ public unsafe sealed class MCH : MachinistRotation
 
             if (IsOffCooldown(BarrelStabilizerPvE) && IsOffCooldown(AirAnchorPvE) && IsOffCooldown(WildfirePvE) && IsOffCooldown(ChainSawPvE) && IsOffCooldown(DrillPvE)
             && GaussRoundPvE.Cooldown.CurrentCharges == 3 && RicochetPvE.Cooldown.CurrentCharges == 3 && ReassemblePvE.Cooldown.CurrentCharges == 2
-            && !InCombat && !inOpener && !openerStarted && Player.Level == 90)
+            && !InCombat && !inOpener && !openerStarted)
             {
                 readyOpener = true;
                 inOpener = false;
@@ -59,7 +59,7 @@ public unsafe sealed class MCH : MachinistRotation
 
         }
 
-        if (remainTime < 2.0 && IsThereABoss)
+        //if (remainTime < 2.0 && IsThereABoss)
         {
             if (UseBurstMedicine(out var act, clippingCheck: false)) return act;
         }
@@ -94,7 +94,7 @@ public unsafe sealed class MCH : MachinistRotation
         // Reset check for opener
         if (IsOffCooldown(BarrelStabilizerPvE) && IsOffCooldown(AirAnchorPvE) && IsOffCooldown(WildfirePvE) && IsOffCooldown(ChainSawPvE) && IsOffCooldown(DrillPvE)
             && GaussRoundPvE.Cooldown.CurrentCharges == 2 && RicochetPvE.Cooldown.CurrentCharges == 2 && ReassemblePvE.Cooldown.CurrentCharges == 2
-            && !InCombat && !inOpener && !openerStarted && Player.Level == 90)
+            && !InCombat && !inOpener && !openerStarted)
         {
             readyOpener = true;
             inOpener = false;

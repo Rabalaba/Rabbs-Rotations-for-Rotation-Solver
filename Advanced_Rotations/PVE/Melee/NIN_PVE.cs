@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static FFXIVClientStructs.FFXIV.Client.Game.Control.GazeController;
+//using static FFXIVClientStructs.FFXIV.Client.Game.Control.GazeController;
 using RabbsRotations.JobHelpers;
 using static RabbsRotations.JobHelpers.NIN;
 using RotationSolver.Basic.Data;
@@ -92,7 +92,7 @@ public sealed class NIN_PVE : NinjaRotation
             IBaseAction Thisaction = new BaseAction((ActionID)actionID);
             if (actionID != 0)
             {
-                if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
+                if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
             }
         }
 
@@ -114,7 +114,7 @@ public sealed class NIN_PVE : NinjaRotation
                 IBaseAction Thisaction = new BaseAction((ActionID)actionID);
                 if (actionID != 0)
                 {
-                    if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
+                    if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
                 }
             }
         }
@@ -136,7 +136,7 @@ public sealed class NIN_PVE : NinjaRotation
                 IBaseAction Thisaction = new BaseAction((ActionID)actionID);
                 if (actionID != 0)
                 {
-                    if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
+                    if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true,  skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
                 }
             }
             
@@ -149,7 +149,7 @@ public sealed class NIN_PVE : NinjaRotation
                 IBaseAction Thisaction = new BaseAction((ActionID)actionID);
                 if (actionID != 0)
                 {
-                    if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
+                    if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true,  skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
                 }
             }
             
@@ -173,7 +173,7 @@ public sealed class NIN_PVE : NinjaRotation
                         IBaseAction Thisaction = new BaseAction((ActionID)actionID);
                         if (actionID != 0)
                         {
-                            if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
+                            if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
                         }
                     }
                 }
@@ -186,7 +186,7 @@ public sealed class NIN_PVE : NinjaRotation
                 IBaseAction Thisaction = new BaseAction((ActionID)actionID);
                 if (actionID != 0)
                 {
-                    if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
+                    if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
                 }
             }
         }
@@ -201,27 +201,14 @@ public sealed class NIN_PVE : NinjaRotation
             PhantomKamaitachiPvE.EnoughLevel)
             if (PhantomKamaitachiPvE.CanUse(out act)) return true;
 
-        if ((!HuraijinPvE.EnoughLevel || !InCombat) &&
-            HutonTime <= 15 &&
-            chargeCheck &&
-            mudraState.CastHuton(out actionID))
-        {
-            IBaseAction Thisaction = new BaseAction((ActionID)actionID);
-            if (actionID != 0)
-            {
-                if (Thisaction.CanUse(out act)) return true;
-            }
-        }
 
-        if (InCombat && HutonTime <= 0 && !inMudraState)
-            if (HuraijinPvE.CanUse(out act)) return true;
 
         if (!inTrickBurstSaveWindow && IsOnCooldown(MugPvE) && mudraState.CastHyoshoRanryu(out actionID))
         {
             IBaseAction Thisaction = new BaseAction((ActionID)actionID);
             if (actionID != 0)
             {
-                if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
+                if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
             }
         }
 
@@ -234,7 +221,7 @@ public sealed class NIN_PVE : NinjaRotation
             IBaseAction Thisaction = new BaseAction((ActionID)actionID);
             if (actionID != 0)
             {
-                if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
+                if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
             }
         }
         
@@ -246,7 +233,7 @@ public sealed class NIN_PVE : NinjaRotation
             IBaseAction Thisaction = new BaseAction((ActionID)actionID);
             if (actionID != 0)
             {
-                if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
+                if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
             }
         }
 
@@ -256,7 +243,7 @@ public sealed class NIN_PVE : NinjaRotation
             IBaseAction Thisaction = new BaseAction((ActionID)actionID);
             if (actionID != 0)
             {
-                if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
+                if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
             }
         }
 
@@ -268,7 +255,7 @@ public sealed class NIN_PVE : NinjaRotation
             IBaseAction Thisaction = new BaseAction((ActionID)actionID);
             if (actionID != 0)
             {
-                if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipClippingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
+                if (Thisaction.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true)) return true;
             }
         }
 

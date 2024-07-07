@@ -33,9 +33,9 @@ public sealed class SAM_PVE : SamuraiRotation
     }
 
 
-    protected override IAction? CountDownAction(float remainTime)
+    protected unsafe override IAction? CountDownAction(float remainTime)
     {
-        var IsThereABoss = AllHostileTargets.Any(p => p.IsBossFromTTK()) || AllHostileTargets.Any(p => p.IsBossFromIcon());
+        //var IsThereABoss = AllHostileTargets.Any(p => p.IsBossFromTTK()) || AllHostileTargets.Any(p => p.IsBossFromIcon());
 
         if (remainTime < 0.2)
         {
@@ -48,7 +48,7 @@ public sealed class SAM_PVE : SamuraiRotation
 
         if (remainTime < 5 && !HaveTrueNorth)
         {
-            if (TrueNorthPvE.CanUse(out var act, skipClippingCheck: true)) return act;
+            if (TrueNorthPvE.CanUse(out var act)) return act;
         }
 
         if (remainTime < 8.5)
@@ -65,6 +65,7 @@ public sealed class SAM_PVE : SamuraiRotation
     {
         var IsTargetBoss = HostileTarget?.IsBossFromTTK() ?? false;
         var IsTargetDying = HostileTarget?.IsDying() ?? false;
+        //int numberLNhigabana = AllHostileTargets.Where(m => m.HasStatus(true, StatusID.Higanbana)).Count(); 
         int currentMinute = (int)Math.Floor(CombatTime / 60f);
         int lastCombatMinute = currentMinute; // Initialize with current minute
 
@@ -77,10 +78,10 @@ public sealed class SAM_PVE : SamuraiRotation
         {
 
             // Check for Higabna if Sen is 1 and target doesn't have Higanbana debuff, skip for first couple gcd in opener to get raid buffs first, maybe build logic for raid burst correction ie "IsBurst" check
-            if (SenCount == 1 && CombatTime > 5 && !IsTargetDying && AllHostileTargets != null && (!AllHostileTargets.Any(p => p.HasStatus(true, StatusID.Higanbana)) || AllHostileTargets.Any(p => p.WillStatusEnd(10, true, StatusID.Higanbana))))
-            {
-                if (HiganbanaPvE.CanUse(out act)) return true; // Only return true if Higanbana is usable and debuff applies
-            }
+            //if (SenCount == 1 && CombatTime > 5 && !IsTargetDying && AllHostileTargets != null && NumberOfHostilesInRange < 3 && numberLNhigabana < 3 && (!AllHostileTargets.Any(p => p.HasStatus(true, StatusID.Higanbana)) || AllHostileTargets.Any(p => p.WillStatusEnd(10, true, StatusID.Higanbana))))
+            //{
+                //if (HiganbanaPvE.CanUse(out act)) return true; // Only return true if Higanbana is usable and debuff applies
+            //}
 
             if (SenCount == 2)
             {
@@ -186,7 +187,6 @@ public sealed class SAM_PVE : SamuraiRotation
         }
         if (CombatTime > 30 || IkishotenPvE.IsInCooldown)
         {
-            if (ShohaIiPvE.CanUse(out act)) return true;
             if (ShohaPvE.CanUse(out act)) return true;
         }
 

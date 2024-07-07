@@ -1,10 +1,12 @@
-﻿using RotationSolver.Basic.Data;
+﻿using Dalamud.Game.ClientState.Party;
+using FFXIVClientStructs.FFXIV.Client.UI;
+using RotationSolver.Basic.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static FFXIVClientStructs.FFXIV.Client.Game.Control.GazeController;
+//using static FFXIVClientStructs.FFXIV.Client.Game.Control.GazeController;
 
 namespace RabbsRotationsNET8.PVE.Melee;
 [Rotation("Rabbs Dragoon", CombatType.PvE, GameVersion = "6.58")]
@@ -91,15 +93,14 @@ public sealed class DRG_PVE : DragoonRotation
                 if (LanceChargePvE.CanUse(out act, skipAoeCheck: true)) return true;
 
                 //Dragon Sight Feature
-                if (DragonSightPvE.CanUse(out act, skipAoeCheck: true)) return true;
-                if (PartyMembers.Count() < 2 && SoloEye.CanUse(out act, skipStatusProvideCheck: true)) return true;
+                //if ( < 2 && SoloEye.CanUse(out act, skipStatusProvideCheck: true)) return true;
 
                 //Life Surge Feature
                 if (!HasEffect(StatusID.LifeSurge) &&
                     (HasEffect(StatusID.RightEye) && HasEffect(StatusID.LanceCharge) && IsLastGCD(true, VorpalThrustPvE) ||
                     HasEffect(StatusID.LanceCharge) && IsLastGCD(true, VorpalThrustPvE) ||
                     HasEffect(StatusID.RightEye) && HasEffect(StatusID.LanceCharge) && (HasEffect(StatusID.WheelInMotion) || HasEffect(StatusID.FangAndClawBared)) ||
-                    IsOnCooldown(DragonSightPvE) && IsOnCooldown(LanceChargePvE) && IsLastGCD(true, VorpalThrustPvE)))
+                    IsOnCooldown(LanceChargePvE) && IsLastGCD(true, VorpalThrustPvE)))
                     if (LifeSurgePvE.CanUse(out act, usedUp: true)) return true;
                 //Wyrmwind Thrust Feature
                 if (WyrmwindThrustPvE.CanUse(out act, skipAoeCheck: true)) return true;
@@ -112,7 +113,6 @@ public sealed class DRG_PVE : DragoonRotation
                     if (HighJumpPvE.CanUse(out act, skipAoeCheck: true) && WeaponRemain > 0.8) return true;
                     if (MirageDivePvE.CanUse(out act, skipAoeCheck: true)) return true;
                     if (DragonfireDivePvE.CanUse(out act, skipAoeCheck: true) && WeaponRemain > 0.8) return true;
-                    if (SpineshatterDivePvE.CanUse(out act, skipAoeCheck: true, usedUp: true) && WeaponRemain > 0.8) return true;
                 }
 
                 if (HostileTarget.DistanceToPlayer() <= 3 && !IsMoving && (CombatTime > 30 || !LevelChecked(BattleLitanyPvE)))
@@ -123,7 +123,6 @@ public sealed class DRG_PVE : DragoonRotation
                     if (HighJumpPvE.CanUse(out act, skipAoeCheck: true) && WeaponRemain > 0.8) return true;
                     if (MirageDivePvE.CanUse(out act, skipAoeCheck: true)) return true;
                     if (DragonfireDivePvE.CanUse(out act, skipAoeCheck: true) && WeaponRemain > 0.8) return true;
-                    if (SpineshatterDivePvE.CanUse(out act, skipAoeCheck: true, usedUp: true) && WeaponRemain > 0.8) return true;
                 }
             }
         }

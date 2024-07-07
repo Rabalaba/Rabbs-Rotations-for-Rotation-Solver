@@ -455,9 +455,9 @@ namespace RabbsRotations.JobHelpers
 
             public uint OpenerStep = 1;
 
-            public static bool LevelChecked => Player.Level >= OpenerLevel;
+           // public static bool LevelChecked => Player.Level >= OpenerLevel;
 
-            public bool CanOpener => HasCooldowns() && LevelChecked;
+           // public bool CanOpener => HasCooldowns() && LevelChecked;
 
             private OpenerState currentState = OpenerState.OpenerFinished;
 
@@ -483,10 +483,10 @@ namespace RabbsRotations.JobHelpers
             private bool DoPrePullSteps(out uint actionID, MudraCasting mudraState)
             {
                 actionID = 0;
-                if (!LevelChecked) return false;
+                //if (!LevelChecked) return false;
 
 
-                if (CanOpener && PrePullStep == 0 && !InCombat) { CurrentState = OpenerState.PrePull; }
+                //if (CanOpener && PrePullStep == 0 && !InCombat) { CurrentState = OpenerState.PrePull; }
 
                 if (CurrentState == OpenerState.PrePull)
                 {
@@ -521,7 +521,7 @@ namespace RabbsRotations.JobHelpers
             private bool DoOpener(out uint actionID, MudraCasting mudraState)
             {
                 actionID = 0;
-                if (!LevelChecked) return false;
+                //if (!LevelChecked) return false;
 
                 if (CurrentState == OpenerState.InOpener)
                 {
@@ -612,7 +612,7 @@ namespace RabbsRotations.JobHelpers
             public bool DoFullOpener(out uint actionID, MudraCasting mudraState)
             {
                 actionID = 0;
-                if (!LevelChecked) return false;
+                //if (!LevelChecked) return false;
 
                 if (!openerEventsSetup) { Condition.ConditionChange += CheckCombatStatus; openerEventsSetup = true; }
 

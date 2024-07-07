@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static FFXIVClientStructs.FFXIV.Client.Game.Control.GazeController;
+//using static FFXIVClientStructs.FFXIV.Client.Game.Control.GazeController;
 
 namespace RabbsRotationsNET8.PVE.Ranged_Phys;
 [Rotation("Rabbs Dancer PVE & PVP", CombatType.Both, GameVersion = "6.58")]
@@ -60,19 +60,19 @@ public unsafe sealed class DNC : DancerRotation
         if (!Player.HasStatus(true, StatusID.ClosedPosition) && ClosedPositionPvE.CanUse(out act)) return true;
 
         // ST Standard Step (outside of burst)
-        if (!Player.HasStatus(true, StatusID.TechnicalFinish))
-        {
-            if (AllHostileTargets.Any(p => !p.IsDying() && p.DistanceToPlayer() < 10 && p.IsTargetable) &&
-                TechnicalStepPvE.Cooldown.RecastTimeRemainOneCharge > 5 &&
-                (!FlourishPvE.Cooldown.IsCoolingDown || FlourishPvE.Cooldown.RecastTimeRemainOneCharge > 5))
-                if (StandardStepPvE.CanUse(out act)) return true;
-        }
+        //if (!Player.HasStatus(true, StatusID.TechnicalFinish))
+        //{
+            //if (AllHostileTargets.Any(p => !p.IsDying() && p.DistanceToPlayer() < 10 && p.IsTargetable) &&
+                //TechnicalStepPvE.Cooldown.RecastTimeRemainOneCharge > 5 &&
+               // (!FlourishPvE.Cooldown.IsCoolingDown || FlourishPvE.Cooldown.RecastTimeRemainOneCharge > 5))
+              //  if (StandardStepPvE.CanUse(out act)) return true;
+     //   }
 
         // ST Technical Step
-        if (AllHostileTargets.Any(p => !p.IsDying() && p.DistanceToPlayer() < 10) &&
-            InCombat &&
-            !Player.HasStatus(true, StatusID.StandardStep))
-            if (TechnicalStepPvE.CanUse(out act)) return true;
+        //if (AllHostileTargets.Any(p => !p.IsDying() && p.DistanceToPlayer() < 10) &&
+            //InCombat &&
+            //!Player.HasStatus(true, StatusID.StandardStep))
+            //if (TechnicalStepPvE.CanUse(out act)) return true;
 
         // ST Saber Dance
         if (TechnicalStepPvE.Cooldown.RecastTimeRemainOneCharge > 5 || !TechnicalStepPvE.Cooldown.IsCoolingDown)
@@ -89,13 +89,13 @@ public unsafe sealed class DNC : DancerRotation
             if (TillanaPvE.CanUse(out act, skipAoeCheck: true)) return true;
 
         // ST Standard Step (inside of burst)
-        if (AllHostileTargets.Any(p => !p.IsDying() && p.DistanceToPlayer() < 10) &&
-            Player.HasStatus(true, StatusID.TechnicalFinish))
-        {
-            if (!IsTargetDying &&
-                Player.StatusTime(true, StatusID.TechnicalFinish) > 5)
-                if (StandardStepPvE.CanUse(out act)) return true;
-        }
+       // if (AllHostileTargets.Any(p => !p.IsDying() && p.DistanceToPlayer() < 10) &&
+           // Player.HasStatus(true, StatusID.TechnicalFinish))
+       // {
+         //   if (!IsTargetDying &&
+          //      Player.StatusTime(true, StatusID.TechnicalFinish) > 5)
+           //     if (StandardStepPvE.CanUse(out act)) return true;
+       // }
 
         if (BloodshowerPvE.CanUse(out act)) return true;
         if (FountainfallPvE.CanUse(out act)) return true;

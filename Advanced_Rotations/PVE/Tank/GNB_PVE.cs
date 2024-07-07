@@ -2,7 +2,7 @@ using Dalamud.Game;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using RotationSolver.Basic.Data;
 using System;
-using static FFXIVClientStructs.FFXIV.Client.Game.Control.GazeController;
+//using static FFXIVClientStructs.FFXIV.Client.Game.Control.GazeController;
 
 namespace RabbsRotationsNET8.PVE.Tank;
 
@@ -17,7 +17,7 @@ public unsafe sealed class GNB_PVE : GunbreakerRotation
     public override bool CanHealAreaSpell => false;
 
     private static bool NoMercy => Player.HasStatus(true, StatusID.NoMercy);
-    public static int MaxCartridges => Player.Level >= 88 ? 3 : 2;
+    public static int MaxCartridges => 3;
     public static bool IsOddMinute()
     {
         // Get whole minutes from CombatTime (assuming it represents seconds)
@@ -200,14 +200,7 @@ public unsafe sealed class GNB_PVE : GunbreakerRotation
         }
 
 
-        //Rough Divide Feature
-        if (!IsMoving && !Player.HasStatus(true, StatusID.ReadyToBlast))
-        {
-            if (HostileTarget.DistanceToPlayer() <= 3 && NoMercy && DangerZonePvE.Cooldown.IsCoolingDown && BowShockPvE.Cooldown.IsCoolingDown && DoubleDownPvE.Cooldown.IsCoolingDown)
-                if (RoughDividePvE.CanUse(out act)) return true;
-            if (HostileTarget.DistanceToPlayer() <= 3 && NoMercy && DangerZonePvE.Cooldown.IsCoolingDown && BowShockPvE.Cooldown.IsCoolingDown && DoubleDownPvE.Cooldown.IsCoolingDown && AmmoComboStep is 2)
-                if (RoughDividePvE.CanUse(out act, usedUp: true)) return true;
-        }
+
 
         // 60s window features
         if (NoMercyPvE.Cooldown.RecastTimeRemainOneCharge > 57 || NoMercy)
@@ -225,7 +218,7 @@ public unsafe sealed class GNB_PVE : GunbreakerRotation
 
     protected override bool DefenseAreaAbility(IAction nextGCD, out IAction? act)
     {
-        if (HeartOfLightPvE.CanUse(out act, onLastAbility: true)) return true;
+        if (HeartOfLightPvE.CanUse(out act)) return true;
         if (ReprisalPvE.CanUse(out act)) return true;
         return base.DefenseAreaAbility(nextGCD, out act);
     }
@@ -233,8 +226,8 @@ public unsafe sealed class GNB_PVE : GunbreakerRotation
     protected override bool DefenseSingleAbility(IAction nextGCD, out IAction? act)
     {
 
-        if (CamouflagePvE.CanUse(out act, onLastAbility: true)) return true;
-        if (HeartOfStonePvE.CanUse(out act, onLastAbility: true)) return true;
+        if (CamouflagePvE.CanUse(out act)) return true;
+        if (HeartOfStonePvE.CanUse(out act)) return true;
         if ((!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)) && NebulaPvE.CanUse(out act)) return true;
         if (NebulaPvE.Cooldown.IsCoolingDown && NebulaPvE.Cooldown.ElapsedAfter(60) && RampartPvE.CanUse(out act)) return true;
         if (ReprisalPvE.CanUse(out act)) return true;
@@ -244,7 +237,7 @@ public unsafe sealed class GNB_PVE : GunbreakerRotation
 
     protected override bool HealSingleAbility(IAction nextGCD, out IAction? act)
     {
-        if (AuroraPvE.CanUse(out act, usedUp: true, onLastAbility: true)) return true;
+        if (AuroraPvE.CanUse(out act, usedUp: true)) return true;
         return base.HealSingleAbility(nextGCD, out act);
     }
 

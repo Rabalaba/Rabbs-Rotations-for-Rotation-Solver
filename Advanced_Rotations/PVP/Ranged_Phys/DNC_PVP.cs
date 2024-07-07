@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static FFXIVClientStructs.FFXIV.Client.Game.Control.GazeController;
+//using static FFXIVClientStructs.FFXIV.Client.Game.Control.GazeController;
 
 namespace RabbsRotations.Ranged;
 [Rotation("Rabbs Dancer PVP", CombatType.PvP, GameVersion = "6.58")]
@@ -32,7 +32,7 @@ public unsafe sealed class DNC_PVP : DancerRotation
         var IsTargetDying = HostileTarget?.IsDying() ?? false;
 
         #region pvp
-        if (AllHostileTargets.Any(p => p.DistanceToPlayer() < 5) && HoningDancePvP.CanUse(out act, skipAoeCheck:true)) return true;
+        //if (AllHostileTargets.Any(p => p.DistanceToPlayer() < 5) && HoningDancePvP.CanUse(out act, skipAoeCheck:true)) return true;
 
         if (StarfallDancePvP.CanUse(out act)) return true;
 
@@ -52,10 +52,10 @@ public unsafe sealed class DNC_PVP : DancerRotation
     {
         #region pvp
 
-        if (Player.MaxHp - Player.CurrentHp >= 10000)
-        {
-            if (CuringWaltzPvP.CanUse(out act)) return true;
-        }
+        //if (Player.MaxHp - Player.CurrentHp >= 10000)
+        //{
+            //if (CuringWaltzPvP.CanUse(out act)) return true;
+        //}
         if (HasHostilesInRange && !Player.HasStatus(false, StatusID.FlourishingSaberDance, StatusID.EnAvant))
         if (EnAvantPvP.CanUse(out act, usedUp:true)) return true;
 
