@@ -5,7 +5,7 @@ using System;
 
 namespace RabbsRotationsNET8.Melee;
 
-[Rotation("RabbsViper", CombatType.PvE, GameVersion = "7.0")]
+[Rotation("RabbsViper2", CombatType.PvE, GameVersion = "7.0")]
 [SourceCode(Path = "main/DefaultRotations/Melee/VPR_Default.cs")]
 [Api(2)]
 public sealed class VPR_Default : ViperRotation
@@ -127,7 +127,7 @@ public sealed class VPR_Default : ViperRotation
         }
 
 
-        if (RattlingCoilStacks > 0  && DreadCombo is (DreadCombo)0 && !Player.HasStatus(true, StatusID.ReadyToReawaken) &&
+        if (RattlingCoilStacks > 0  && DreadCombo is (DreadCombo)0 && !Player.HasStatus(true, StatusID.ReadyToReawaken) && ComboMark2 ==1 &&
             !HaveSwiftVenom && !HaveHuntersVenom &&
             HaveSwiftScaled && HaveHuntersInstinct)
         {
@@ -149,7 +149,10 @@ public sealed class VPR_Default : ViperRotation
 
         if (ComboMark2 == 2)
         {
-
+            if (CombatTime < 5)
+            {
+                if (DreadFangsPvE.CanUse(out act)) return true;
+            }
             if (SteelFangsPvE.CanUse(out act) && HaveFlankingVenom) return true;
             if (DreadFangsPvE.CanUse(out act) && HaveHindVenom) return true;
         }
@@ -173,7 +176,7 @@ public sealed class VPR_Default : ViperRotation
                 if (DreadFangsPvE.CanUse(out act)) return true;
             }
         }
-        if (ComboMark2 == 1)
+        if (ComboMark2 >0 )
         {
 
         //Reawakend Usage
@@ -188,11 +191,14 @@ public sealed class VPR_Default : ViperRotation
             if (ReawakenPvE.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true)) return true;
         }
 
-
             //Dreadwinder Usage
-            if (PitOfDreadPvE.CanUse(out act, usedUp: true) && DreadCombo is (DreadCombo)0) return true;
+            if (PitOfDreadPvE.CanUse(out act) && DreadCombo is (DreadCombo)0) return true;
             //Dreadwinder Usage
-            if (DreadwinderPvE.CanUse(out act, usedUp: true) && DreadCombo is (DreadCombo)0) return true;
+            if (DreadwinderPvE.CanUse(out act) && HaveSwiftScaled && DreadCombo is (DreadCombo)0) return true;
+            //Dreadwinder Usage
+            if (PitOfDreadPvE.CanUse(out act, usedUp: true) && RattlingCoilStacks ==0 && ComboMark2 == 1 && ComboMark4 ==1 && DreadCombo is (DreadCombo)0) return true;
+            //Dreadwinder Usage
+            if (DreadwinderPvE.CanUse(out act, usedUp: true) && DreadwinderPvE.Cooldown.CurrentCharges == 1 && RattlingCoilStacks == 0 && ComboMark2 == 1 && ComboMark4 == 1 && DreadCombo is (DreadCombo)0) return true;
         }
 
         if (!HostileTarget?.HasStatus(true, StatusID.NoxiousGnash, StatusID.NoxiousGnash_4099) ?? false || (HostileTarget?.WillStatusEnd(20, true, StatusID.NoxiousGnash, StatusID.NoxiousGnash_4099) ?? false))
