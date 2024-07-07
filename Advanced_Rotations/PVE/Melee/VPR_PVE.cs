@@ -5,7 +5,7 @@ using System;
 
 namespace RabbsRotationsNET8.Melee;
 
-[Rotation("RabbsViper2", CombatType.PvE, GameVersion = "7.0")]
+[Rotation("RabbsViper", CombatType.PvE, GameVersion = "7.0")]
 [SourceCode(Path = "main/DefaultRotations/Melee/VPR_Default.cs")]
 [Api(2)]
 public sealed class VPR_Default : ViperRotation
