@@ -3,9 +3,9 @@ using Dalamud.Game.ClientState.JobGauge.Types;
 using RotationSolver.Basic.Data;
 using System;
 
-namespace DefaultRotations.Melee;
+namespace RabbsRotationsNET8.Melee;
 
-[Rotation("Default", CombatType.PvE, GameVersion = "7.0")]
+[Rotation("RabbsViper", CombatType.PvE, GameVersion = "7.0")]
 [SourceCode(Path = "main/DefaultRotations/Melee/VPR_Default.cs")]
 [Api(2)]
 public sealed class VPR_Default : ViperRotation
