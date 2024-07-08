@@ -8,16 +8,7 @@ namespace RabbsRotationsNET8.Magical;
 public sealed class PCT_Default : PictomancerRotation
 {
 
-    private const ActionID PomMPVEActionID = (ActionID)34670;
-    private IBaseAction PomMPvE = new BaseAction(PomMPVEActionID);
 
-    private const ActionID WingMPVEActionID = (ActionID)34671;
-    private IBaseAction WingMPvE = new BaseAction(WingMPVEActionID);
-
-    private bool MogofAgesReady = false;
-    private bool MogofAgesNotInCooldown = false;
-    private bool PomMotifAvailable = false;
-    private bool PomMuseAvailable = false;
 
     public override MedicineType MedicineType => MedicineType.Intelligence;
     #region Countdown logic
@@ -41,54 +32,6 @@ public sealed class PCT_Default : PictomancerRotation
     #region oGCD Logic
     protected override bool AttackAbility(IAction nextGCD, out IAction? act)
     {
-        //LivingMusePve.AdjusteId == 34670 rdy to cast Pom Muse 34671 Winged Muse  , 35347 not ready to cast anything
-        //SteelMusePve.AdjusteId == 34674 rdy to cast Striking Muse  , 35348 not ready to cast anything
-        //ScenicMusePve.AdjusteId ==  34675, 35349 not ready to cast anything
-        bool PomMotifReady = (CreatureMotifPvE.AdjustedID == 34664);
-        bool PomMuseReady = (LivingMusePvE.AdjustedID == 34670);
-        bool WingedMusefReady = (LivingMusePvE.AdjustedID == 34671);
-
-        if (MogOfTheAgesPvE.Cooldown.IsCoolingDown)
-        {
-            MogofAgesNotInCooldown = false;
-            MogofAgesReady = false;
-            PomMotifAvailable = false;
-            PomMuseAvailable = false;
-        }
-
-        if (!MogOfTheAgesPvE.Cooldown.IsCoolingDown)
-        {
-            MogofAgesNotInCooldown = true;
-        }
-
-        if (MogofAgesNotInCooldown && !PomMotifAvailable && PomMotifReady)
-        {
-            PomMotifAvailable = true;
-        }
-
-        if (MogofAgesNotInCooldown && !PomMuseAvailable && PomMuseReady)
-        {
-            PomMuseAvailable = true;
-        }
-
-        if (MogofAgesNotInCooldown && (PomMuseAvailable || PomMotifAvailable))
-        {
-            MogofAgesReady = true;
-        }
-
-        if (!Player.HasStatus(true, StatusID.SubtractivePalette) && (PaletteGauge >= 50) && SubtractivePalettePvE.CanUse(out act)) return true;
-
-        //landscape to be use before mog of ages
-        //if (LandscapeMotifDrawn && (PomMotifReady || PomMuseReady) && !MogOfTheAgesPvE.Cooldown.IsCoolingDown && StarryMusePvE.CanUse(out act, skipStatusProvideCheck: true, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, usedUp: true)) return true;
-        if (LandscapeMotifDrawn && MogofAgesReady && !MogOfTheAgesPvE.Cooldown.IsCoolingDown && StarryMusePvE.CanUse(out act, skipStatusProvideCheck: true, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, usedUp: true)) return true;
-        if (MogOfTheAgesPvE.CanUse(out act, skipStatusProvideCheck: true, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, usedUp: true)) return true;
-
-        if (CreatureMotifDrawn && PomMuseReady && PomMPvE.CanUse(out act, skipStatusProvideCheck: true, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, usedUp: true)) return true;
-        if (CreatureMotifDrawn && WingedMusefReady && WingMPvE.CanUse(out act, skipStatusProvideCheck: true, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, usedUp: true)) return true;
-        if (WeaponMotifDrawn && StrikingMusePvE.CanUse(out act, skipStatusProvideCheck: true, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, usedUp: true)) return true;
-
-        //kept just in case
-        //if (LandscapeMotifDrawn && StarryMusePvE.CanUse(out act, skipStatusProvideCheck: true, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, usedUp: true)) return true;
 
 
 
@@ -115,13 +58,6 @@ public sealed class PCT_Default : PictomancerRotation
     protected override bool GeneralGCD(out IAction? act)
     {
 
-        bool HammerMotifReady = (WeaponMotifPvE.AdjustedID == 34668);
-        bool WingMotifReady = (CreatureMotifPvE.AdjustedID == 34665);
-        bool PomMotifReady = (CreatureMotifPvE.AdjustedID == 34664);
-        bool StarryMotifReady = (LandscapeMotifPvE.AdjustedID == 34669);
-        //WeaponMotifPvE.AdjustedID == 34668 => rdy to cast HammerMotif, 34690 not ready to cast anything
-        //CreatureMotifPve.AdjustedID == 34665 => rdy to cast WingMotif / 34664 =>rdy to cast PomMotif , 34689 not ready to cast anything
-        //LandscapeMotifPvE .AdjustedID ==  34669 => rdy to cast StarrySkyMotif , 34691 not ready to cast anything
         if (!InCombat)
         { 
         if (!CreatureMotifDrawn)
@@ -131,17 +67,13 @@ public sealed class PCT_Default : PictomancerRotation
             }
         if (!WeaponMotifDrawn) 
             { 
-                //if ()
+                
             }
         
         }
 
-        if (Player.HasStatus(true, StatusID.HammerTime) && HammerStampPvE.CanUse(out act, skipCastingCheck: true, skipAoeCheck: true)) return true;
+        if (HammerStampPvE.CanUse(out act, skipCastingCheck: true, skipAoeCheck: true) && Player.HasStatus(true, StatusID.HammerTime)) return true;
 
-        if (!CreatureMotifDrawn && WingMotifReady && WingMotifPvE.CanUse(out act)) return true;
-        if (!CreatureMotifDrawn && PomMotifReady && PomMotifPvE.CanUse(out act)) return true;
-        if (!WeaponMotifDrawn && HammerMotifReady && HammerMotifPvE.CanUse(out act)) return true;
-        if (!LandscapeMotifDrawn && StarryMotifReady && StarrySkyMotifPvE.CanUse(out act)) return true;
         if (Player.HasStatus(true, StatusID.SubtractivePalette))
         {
             //AOE
@@ -181,51 +113,5 @@ public sealed class PCT_Default : PictomancerRotation
     }
     #endregion
 
-    #region Extra Methods
-    // Extra private helper methods for determining the usability of specific abilities under certain conditions.
-    // These methods simplify the main logic by encapsulating specific checks related to abilities' cooldowns and prerequisites.
-    //private bool CanUseExamplePvE(out IAction? act)
-    //{
 
-    //}
-
-    public override void DisplayStatus()
-    {
-        //motif
-        ImGui.Text("-----Motif");
-        ImGui.Text("HammerMotif " + HammerMotifPvE.AdjustedID.ToString());
-        ImGui.Text("WeaponMotif adjID " + WeaponMotifPvE.AdjustedID.ToString());
-        ImGui.Text("-----");
-        ImGui.Text("WingMotif " + WingMotifPvE.AdjustedID.ToString());
-        ImGui.Text("CreatureMotif adjID " + CreatureMotifPvE.AdjustedID.ToString());
-        ImGui.Text("-----");
-        ImGui.Text("StarrySkyMotif " + StarrySkyMotifPvE.AdjustedID.ToString());
-        ImGui.Text("LandscapeMotif adjID " + LandscapeMotifPvE.AdjustedID.ToString());
-
-        //muse
-        ImGui.Text("-----Muse");
-        ImGui.Text("PomMuse " + PomMusePvE.AdjustedID.ToString());
-        ImGui.Text("LivingMuse adjID " + LivingMusePvE.AdjustedID.ToString());
-        ImGui.Text("-----");
-        ImGui.Text("StrikingMuse " + StrikingMusePvE.AdjustedID.ToString());
-        ImGui.Text("SteelMuse adjID " + SteelMusePvE.AdjustedID.ToString());
-        ImGui.Text("-----");
-        ImGui.Text("StarryMuse " + StarryMusePvE.AdjustedID.ToString());
-        ImGui.Text("ScenicMuse adjID " + ScenicMusePvE.AdjustedID.ToString());
-
-        bool PomMotifReady = (CreatureMotifPvE.AdjustedID == 34664);
-        bool PomMuseReady = (LivingMusePvE.AdjustedID == 34670);
-        //pom starry sky
-        ImGui.Text("-----Pom Starry Sky");
-        ImGui.Text("PomMotifReady " + PomMotifReady.ToString());
-        ImGui.Text("PomMuseReady " + PomMuseReady.ToString());
-        ImGui.Text("StarryMuse " + StarryMusePvE.Cooldown.IsCoolingDown.ToString());
-        ImGui.Text("MogofAges enabled " + MogOfTheAgesPvE.IsEnabled.ToString());
-        ImGui.Text("MogofAges incooldown " + MogOfTheAgesPvE.IsInCooldown.ToString());
-        ImGui.Text("MogofAges iscoolingdown " + MogOfTheAgesPvE.Cooldown.IsCoolingDown.ToString());
-        ImGui.Text("MogofAges cooldown " + MogOfTheAgesPvE.Info.ToString());
-
-        base.DisplayStatus();
-    }
-    #endregion
 }

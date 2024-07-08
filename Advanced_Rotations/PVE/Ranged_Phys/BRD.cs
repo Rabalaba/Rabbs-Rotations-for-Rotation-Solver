@@ -105,7 +105,7 @@ public sealed class BRD_Default : BardRotation
 
         if (Song != Song.NONE && EmpyrealArrowPvE.CanUse(out act)) return true;
 
-        if (PitchPerfectPvE.CanUse(out act))
+        if (PitchPerfectPvE.CanUse(out act, skipCastingCheck:true, skipAoeCheck:true, skipComboCheck:true))
         {
             if (SongEndAfter(3) && Repertoire > 0) return true;
 
