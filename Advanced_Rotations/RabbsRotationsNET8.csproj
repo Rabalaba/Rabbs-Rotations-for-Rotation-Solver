@@ -83,7 +83,6 @@
 
     <ItemGroup>
       <Folder Include="Duty\" />
-      <Folder Include="PVE\Ranged_Magic\" />
       <Folder Include="PVP\Melee\" />
       <Folder Include="PVP\Tank\" />
       <Folder Include="PVP\Ranged_Magic\" />
