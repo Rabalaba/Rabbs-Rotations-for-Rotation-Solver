@@ -164,14 +164,14 @@ public sealed class BRD_Default : BardRotation
         }
 
         //aoe
-        if (ShadowbitePvE.CanUse(out act, skipCastingCheck: true, skipComboCheck: true) && Player.HasStatus(true, StatusID.HawksEye, StatusID.HawksEye_3861)) return true;
-        if (WideVfix.CanUse(out act, skipCastingCheck: true, skipComboCheck: true) && Player.HasStatus(true, StatusID.HawksEye, StatusID.HawksEye_3861)) return true;
+        if (ShadowbitePvE.CanUse(out act, skipCastingCheck: true, skipComboCheck: true) && Player.HasStatus(true, StatusID.HawksEye, StatusID.HawksEye_3861, StatusID.Barrage)) return true;
+        if (WideVfix.CanUse(out act, skipCastingCheck: true, skipComboCheck: true) && Player.HasStatus(true, StatusID.HawksEye, StatusID.HawksEye_3861, StatusID.Barrage)) return true;
         if (QuickNockPvE.CanUse(out act)) return true;
 
         if (WindbitePvE.CanUse(out act)) return true;
         if (VenomousBitePvE.CanUse(out act)) return true;
-        if (RefulgentArrowPvE.CanUse(out act, skipCastingCheck: true, skipComboCheck: true) && Player.HasStatus(true, StatusID.HawksEye, StatusID.HawksEye_3861)) return true;
-        if (St8Shot.CanUse(out act, skipCastingCheck:true,skipComboCheck:true, skipStatusProvideCheck:true, skipAoeCheck:true) && Player.HasStatus(true, StatusID.HawksEye, StatusID.HawksEye_3861)) return true;
+        if (RefulgentArrowPvE.CanUse(out act, skipCastingCheck: true, skipComboCheck: true) && Player.HasStatus(true, StatusID.HawksEye, StatusID.HawksEye_3861, StatusID.Barrage)) return true;
+        if (St8Shot.CanUse(out act, skipCastingCheck:true,skipComboCheck:true, skipStatusProvideCheck:true, skipAoeCheck:true) && Player.HasStatus(true, StatusID.HawksEye, StatusID.HawksEye_3861, StatusID.Barrage)) return true;
         if (HeavyShotPvE.CanUse(out act)) return true;
 
         return base.GeneralGCD(out act);

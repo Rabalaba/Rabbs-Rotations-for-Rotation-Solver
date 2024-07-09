@@ -22,7 +22,6 @@ public sealed class AST_Default : AstrologianRotation
     public float HoroscopeHeal { get; set; } = 0.3f;
     #endregion
 
-    public static IBaseAction AstralDrawPvE { get; } = new BaseAction((ActionID)37017);
 
     public static IBaseAction MinorArcanaPvE2 { get; } = new BaseAction((ActionID)37022);
 
@@ -161,7 +160,7 @@ public sealed class AST_Default : AstrologianRotation
         }
 
 
-        if (InCombat && PlayCard(out act)) return true;
+        //if (InCombat && PlayCard(out act)) return true;
 
         return base.AttackAbility(nextGCD, out act);
     }
