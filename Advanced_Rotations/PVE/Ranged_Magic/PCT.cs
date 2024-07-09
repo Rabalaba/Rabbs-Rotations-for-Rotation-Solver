@@ -9,9 +9,7 @@ namespace RabbsRotationsNET8.Magical;
 public sealed class PCT_Default : PictomancerRotation
 {
 
-    public static IBaseAction WeaponFix { get; } = new BaseAction((ActionID)AdjustId(ActionID.WeaponMotifPvE));
-    public static IBaseAction LandscapeFix { get; } = new BaseAction((ActionID)AdjustId(ActionID.LandscapeMotifPvE));
-    public static IBaseAction SwiftFix { get; } = new BaseAction((ActionID)AdjustId(ActionID.SwiftcastPvE));
+
 
 
     public override MedicineType MedicineType => MedicineType.Intelligence;
@@ -28,10 +26,6 @@ public sealed class PCT_Default : PictomancerRotation
     protected override bool EmergencyAbility(IAction nextGCD, out IAction? act)
     {
         act = null;
-
-
-        if (!SwiftcastPvE.CanUse(out act) && !SwiftcastPvE.Cooldown.IsCoolingDown && InCombat && (!CreatureMotifDrawn || !WeaponMotifDrawn || !LandscapeMotifDrawn)) return true;
-
 
             return base.EmergencyAbility(nextGCD, out act);
     }
@@ -70,6 +64,8 @@ public sealed class PCT_Default : PictomancerRotation
 
         if (RainbowDripPvE.CanUse(out act) && Player.HasStatus(true, StatusID.RainbowBright)) return true;
 
+        if (HammerStampPvE.CanUse(out act, skipCastingCheck: true, skipAoeCheck: true) && Player.HasStatus(true, StatusID.HammerTime) && InCombat) return true;
+
         if (!InCombat)
         {
             
@@ -83,11 +79,11 @@ public sealed class PCT_Default : PictomancerRotation
             }
         if (!WeaponMotifDrawn) 
             { 
-                if (WeaponFix.CanUse(out act)) return true;
+                if (HammerMotifPvE.CanUse(out act)) return true;
             }
         if (!LandscapeMotifDrawn) 
             { 
-                if (LandscapeFix.CanUse(out act)&&!Player.HasStatus(true, StatusID.Hyperphantasia)) return true;
+                if (StarrySkyMotifPvE.CanUse(out act)&&!Player.HasStatus(true, StatusID.Hyperphantasia)) return true;
             }
 
         if (RainbowDripPvE.CanUse(out act)) return true;
@@ -98,11 +94,11 @@ public sealed class PCT_Default : PictomancerRotation
 
             if (!LandscapeMotifDrawn)
             {
-                if (LandscapeFix.CanUse(out act) && !Player.HasStatus(true, StatusID.Hyperphantasia)) return true;
+                if (StarrySkyMotifPvE.CanUse(out act) && !Player.HasStatus(true, StatusID.Hyperphantasia)) return true;
             }
             if (!WeaponMotifDrawn && !Player.HasStatus(true, StatusID.HammerTime))
             {
-                if (WeaponFix.CanUse(out act)) return true;
+                if (HammerMotifPvE.CanUse(out act)) return true;
             }
             if (!CreatureMotifDrawn)
             {
@@ -115,11 +111,11 @@ public sealed class PCT_Default : PictomancerRotation
 
         if (!LandscapeMotifDrawn)
         {
-            if (LandscapeFix.CanUse(out act) && !Player.HasStatus(true, StatusID.Hyperphantasia)) return true;
+            if (StarrySkyMotifPvE.CanUse(out act) && !Player.HasStatus(true, StatusID.Hyperphantasia)) return true;
         }
         if (!WeaponMotifDrawn && !Player.HasStatus(true, StatusID.HammerTime))
         {
-            if (WeaponFix.CanUse(out act)) return true;
+            if (HammerMotifPvE.CanUse(out act)) return true;
         }
         if (!CreatureMotifDrawn)
         {
@@ -130,9 +126,10 @@ public sealed class PCT_Default : PictomancerRotation
         }
         if (InCombat)
         {
+
             if (StarryMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && LandscapeMotifDrawn) return true;
             if (MogOfTheAgesPvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && MooglePortraitReady) return true;
-            if (SteelMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && WeaponMotifDrawn) return true;
+            if (StrikingMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && WeaponMotifDrawn) return true;
             if (PomMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && CreatureMotifDrawn && LivingMusePvE.AdjustedID == PomMusePvE.ID) return true;
             if (WingedMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && CreatureMotifDrawn && LivingMusePvE.AdjustedID == WingedMusePvE.ID) return true;
             if (ClawedMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && CreatureMotifDrawn && LivingMusePvE.AdjustedID == ClawedMusePvE.ID) return true;
@@ -140,7 +137,7 @@ public sealed class PCT_Default : PictomancerRotation
         }
 
 
-        if (HammerStampPvE.CanUse(out act, skipCastingCheck: true, skipAoeCheck: true) && Player.HasStatus(true, StatusID.HammerTime)) return true;
+
 
         // white/black paint use while moving
         if (IsMoving)
