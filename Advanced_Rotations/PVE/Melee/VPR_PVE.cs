@@ -183,7 +183,7 @@ public sealed class VPR_Default : ViperRotation
         if ((SerpentOffering >= 50|| Player.HasStatus(true, StatusID.ReadyToReawaken)) &&
             HaveSwiftScaled &&
             HaveHuntersInstinct &&
-            (HostileTarget?.HasStatus(true, StatusID.NoxiousGnash, StatusID.NoxiousGnash_4099) ?? false) &&
+            (HostileTarget?.HasStatus(true, StatusID.NoxiousGnash, StatusID.NoxiousGnash_4099) ?? false) && (HostileTarget?.WillStatusEnd(10, true, StatusID.NoxiousGnash, StatusID.NoxiousGnash_4099) ?? false) &&
             !HaveHuntersVenom && !HaveSwiftVenom &&
             !HavePoisedBlood && !HavePoisedFang)
 

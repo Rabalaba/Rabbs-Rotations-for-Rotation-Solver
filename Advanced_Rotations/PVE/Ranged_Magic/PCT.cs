@@ -1,5 +1,8 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.UI;
 using Lumina.Excel.GeneratedSheets;
+using RotationSolver.Basic.Data;
+using System;
+using static Lumina.Data.Parsing.Layer.LayerCommon;
 
 namespace RabbsRotationsNET8.Magical;
 
@@ -34,6 +37,25 @@ public sealed class PCT_Default : PictomancerRotation
     #region oGCD Logic
     protected override bool AttackAbility(IAction nextGCD, out IAction? act)
     {
+        if (Player.HasStatus(true, StatusID.StarryMuse))
+        {
+            if (Player.HasStatus(true, StatusID.SubtractiveSpectrum) && !Player.HasStatus(true, StatusID.SubtractivePalette))
+            {
+                if (SubtractivePalettePvE.CanUse(out act)) return true;
+            }
+
+
+            if (CreatureMotifDrawn)
+            {
+                if (PomMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && CreatureMotifDrawn && LivingMusePvE.AdjustedID == PomMusePvE.ID) return true;
+                if (WingedMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && CreatureMotifDrawn && LivingMusePvE.AdjustedID == WingedMusePvE.ID) return true;
+                if (ClawedMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && CreatureMotifDrawn && LivingMusePvE.AdjustedID == ClawedMusePvE.ID) return true;
+                if (FangedMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && CreatureMotifDrawn && LivingMusePvE.AdjustedID == FangedMusePvE.ID) return true;
+            }
+
+
+
+        }
 
         if (!Player.HasStatus(true, StatusID.SubtractivePalette) && (PaletteGauge >= 50 || Player.HasStatus(true, StatusID.SubtractiveSpectrum)) && SubtractivePalettePvE.CanUse(out act)) return true;
 
@@ -64,6 +86,37 @@ public sealed class PCT_Default : PictomancerRotation
 
         if (RainbowDripPvE.CanUse(out act) && Player.HasStatus(true, StatusID.RainbowBright)) return true;
 
+        // white/black paint use while moving
+        if (IsMoving)
+        {
+            if (HammerStampPvE.CanUse(out act, skipCastingCheck: true, skipAoeCheck: true) && Player.HasStatus(true, StatusID.HammerTime) && InCombat) return true;
+            if (CometInBlackPvE.CanUse(out act, skipCastingCheck: true, skipAoeCheck: true) && Paint > 0 && Player.HasStatus(true, StatusID.MonochromeTones)) return true;
+            if (HolyInWhitePvE.CanUse(out act, skipCastingCheck: true, skipAoeCheck: true) && Paint > 0) return true;
+        }
+
+        if (Player.HasStatus(true, StatusID.StarryMuse))
+        {
+            if (MadeenPortraitReady)
+            {
+                if (RetributionOfTheMadeenPvE.CanUse(out act)) return true;
+            }
+            if (MooglePortraitReady)
+            {
+                if (MogOfTheAgesPvE.CanUse(out act)) return true;
+            }
+            if (!Player.HasStatus(true, StatusID.HammerTime) && WeaponMotifDrawn && SteelMusePvE.Cooldown.HasOneCharge && Player.StatusTime(true, StatusID.StarryMuse) >= 15f)
+            {
+                if (StrikingMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true)) return true;
+            }
+            if (Player.HasStatus(true, StatusID.HammerTime))
+            {
+                if (HammerStampPvE.CanUse(out act, skipCastingCheck: true, skipAoeCheck: true) && Player.HasStatus(true, StatusID.HammerTime) && InCombat) return true;
+            }
+            if (ThunderIiInMagentaPvE.CanUse(out act) && Player.HasStatus(true, StatusID.SubtractivePalette) && Player.HasStatus(true, StatusID.AetherhuesIi)) return true;
+            if (StoneIiInYellowPvE.CanUse(out act) && Player.HasStatus(true, StatusID.SubtractivePalette) && Player.HasStatus(true, StatusID.Aetherhues)) return true;
+            if (BlizzardIiInCyanPvE.CanUse(out act) && Player.HasStatus(true, StatusID.SubtractivePalette)) return true;
+        }
+
         if (HammerStampPvE.CanUse(out act, skipCastingCheck: true, skipAoeCheck: true) && Player.HasStatus(true, StatusID.HammerTime) && InCombat) return true;
 
         if (!InCombat)
@@ -89,7 +142,7 @@ public sealed class PCT_Default : PictomancerRotation
         if (RainbowDripPvE.CanUse(out act)) return true;
         
         }
-        if (InCombat && HasSwift && (!CreatureMotifDrawn || (!WeaponMotifDrawn && !Player.HasStatus(true, StatusID.HammerTime)) || !LandscapeMotifDrawn))
+        if (InCombat && (HasSwift || !HasHostilesInMaxRange) && (!CreatureMotifDrawn || (!WeaponMotifDrawn && !Player.HasStatus(true, StatusID.HammerTime)) || !LandscapeMotifDrawn))
         {
 
             if (!LandscapeMotifDrawn)
@@ -109,21 +162,22 @@ public sealed class PCT_Default : PictomancerRotation
             }
         }
 
-        if (!LandscapeMotifDrawn)
+        if (!LandscapeMotifDrawn && ScenicMusePvE.Cooldown.RecastTimeRemainOneCharge <= LandscapeMotifPvE.Info.CastTime)
         {
             if (StarrySkyMotifPvE.CanUse(out act) && !Player.HasStatus(true, StatusID.Hyperphantasia)) return true;
         }
-        if (!WeaponMotifDrawn && !Player.HasStatus(true, StatusID.HammerTime))
-        {
-            if (HammerMotifPvE.CanUse(out act)) return true;
-        }
-        if (!CreatureMotifDrawn)
+        if (!CreatureMotifDrawn && (LivingMusePvE.Cooldown.HasOneCharge || LivingMusePvE.Cooldown.RecastTimeRemainOneCharge <= CreatureMotifPvE.Info.CastTime))
         {
             if (PomMotifPvE.CanUse(out act) && CreatureMotifPvE.AdjustedID == PomMotifPvE.ID) return true;
             if (WingMotifPvE.CanUse(out act) && CreatureMotifPvE.AdjustedID == WingMotifPvE.ID) return true;
             if (ClawMotifPvE.CanUse(out act) && CreatureMotifPvE.AdjustedID == ClawMotifPvE.ID) return true;
             if (MawMotifPvE.CanUse(out act) && CreatureMotifPvE.AdjustedID == MawMotifPvE.ID) return true; ;
         }
+        if (!WeaponMotifDrawn && !Player.HasStatus(true, StatusID.HammerTime) && (SteelMusePvE.Cooldown.HasOneCharge || SteelMusePvE.Cooldown.RecastTimeRemainOneCharge <= WeaponMotifPvE.Info.CastTime))
+        {
+            if (HammerMotifPvE.CanUse(out act)) return true;
+        }
+
         if (InCombat)
         {
 
@@ -139,17 +193,12 @@ public sealed class PCT_Default : PictomancerRotation
 
 
 
-        // white/black paint use while moving
-        if (IsMoving)
-        {
-            if (CometInBlackPvE.CanUse(out act, skipCastingCheck: true, skipAoeCheck: true) && Paint > 0) return true;
-            if (HolyInWhitePvE.CanUse(out act, skipCastingCheck: true, skipAoeCheck:true) && Paint > 0) return true;
-        }
+        
 
         //white paint over cap protection
         if (Paint == 5)
         {
-            if (CometInBlackPvE.CanUse(out act, skipCastingCheck: true, skipAoeCheck: true) && Paint > 0) return true;
+            if (CometInBlackPvE.CanUse(out act, skipCastingCheck: true, skipAoeCheck: true) && Paint > 0 && Player.HasStatus(true, StatusID.MonochromeTones)) return true;
             if (HolyInWhitePvE.CanUse(out act, skipCastingCheck: true, skipAoeCheck: true) && Paint > 0) return true;
         }
 
@@ -164,26 +213,26 @@ public sealed class PCT_Default : PictomancerRotation
             ///aoe
             ///
 
-            if (ThunderIiInMagentaPvE.CanUse(out act) && Player.HasStatus(true, StatusID.SubtractivePalette)) return true;
-            if (StoneIiInYellowPvE.CanUse(out act) && Player.HasStatus(true, StatusID.SubtractivePalette)) return true;
+            if (ThunderIiInMagentaPvE.CanUse(out act) && Player.HasStatus(true, StatusID.SubtractivePalette) && Player.HasStatus(true, StatusID.AetherhuesIi)) return true;
+            if (StoneIiInYellowPvE.CanUse(out act) && Player.HasStatus(true, StatusID.SubtractivePalette) && Player.HasStatus(true, StatusID.Aetherhues)) return true;
             if (BlizzardIiInCyanPvE.CanUse(out act) && Player.HasStatus(true, StatusID.SubtractivePalette)) return true;
 
 
-            if (WaterIiInBluePvE.CanUse(out act)) return true;
-            if (AeroIiInGreenPvE.CanUse(out act)) return true;
+            if (WaterIiInBluePvE.CanUse(out act) && Player.HasStatus(true, StatusID.AetherhuesIi)) return true;
+            if (AeroIiInGreenPvE.CanUse(out act) && Player.HasStatus(true, StatusID.Aetherhues)) return true;
             if (FireIiInRedPvE.CanUse(out act)) return true;
 
             ///single target
             ///
 
 
-            if (ThunderInMagentaPvE.CanUse(out act) && Player.HasStatus(true, StatusID.SubtractivePalette)) return true;
-            if (StoneInYellowPvE.CanUse(out act) && Player.HasStatus(true, StatusID.SubtractivePalette)) return true;
+            if (ThunderInMagentaPvE.CanUse(out act) && Player.HasStatus(true, StatusID.SubtractivePalette) && Player.HasStatus(true, StatusID.AetherhuesIi)) return true;
+            if (StoneInYellowPvE.CanUse(out act) && Player.HasStatus(true, StatusID.SubtractivePalette) && Player.HasStatus(true, StatusID.Aetherhues)) return true;
             if (BlizzardInCyanPvE.CanUse(out act) && Player.HasStatus(true, StatusID.SubtractivePalette)) return true;
 
 
-            if (WaterInBluePvE.CanUse(out act)) return true;
-            if (AeroInGreenPvE.CanUse(out act)) return true;
+            if (WaterInBluePvE.CanUse(out act) && Player.HasStatus(true, StatusID.AetherhuesIi)) return true;
+            if (AeroInGreenPvE.CanUse(out act) && Player.HasStatus(true, StatusID.Aetherhues)) return true;
             if (FireInRedPvE.CanUse(out act)) return true;
 
         }
