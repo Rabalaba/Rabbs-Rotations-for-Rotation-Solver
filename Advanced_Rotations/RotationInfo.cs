@@ -4,5 +4,5 @@ internal class RotationInfo
 { 
     internal const string USERNAME = $"Rabbs";
 
-    internal const string VERSION = "1.1.2.2";
+    internal const string VERSION = "1.1.2.3";
 }
