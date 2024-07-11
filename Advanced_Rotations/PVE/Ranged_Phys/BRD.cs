@@ -156,11 +156,11 @@ public sealed class BRD_Default : BardRotation
         {
             if (Player.HasStatus(true, StatusID.RagingStrikes) && Player.WillStatusEndGCD(1, 0, true, StatusID.RagingStrikes)) return true;
         }
-        if (RadiantEncorePvE.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true) && Player.HasStatus(true, StatusID.RadiantEncoreReady)) return true;
+        
         if (ResonantArrowPvE.CanUse(out act, skipAoeCheck:true) && Player.HasStatus(true, StatusID.ResonantArrowReady)) return true;
 
         if (CanUseApexArrow(out act)) return true;
-
+        if (RadiantEncorePvE.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true) && Player.HasStatus(true, StatusID.RadiantEncoreReady)) return true;
         if (BlastArrowPvE.CanUse(out act, skipAoeCheck: true))
         {
             if (!Player.HasStatus(true, StatusID.RagingStrikes)) return true;
