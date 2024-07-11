@@ -4,7 +4,7 @@
         <TargetFramework>net8.0-windows</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Authors>Rabbs</Authors>
-        <Version>1.1.2.1</Version>
+        <Version>1.1.2.2</Version>
         <PlatformTarget>x64</PlatformTarget>
         <Platforms>x64</Platforms>
 

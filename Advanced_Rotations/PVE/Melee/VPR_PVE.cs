@@ -183,7 +183,7 @@ public sealed class VPR_Default : ViperRotation
         if ((SerpentOffering >= 50|| Player.HasStatus(true, StatusID.ReadyToReawaken)) &&
             HaveSwiftScaled &&
             HaveHuntersInstinct &&
-            (HostileTarget?.HasStatus(true, StatusID.NoxiousGnash, StatusID.NoxiousGnash_4099) ?? false) && (HostileTarget?.WillStatusEnd(10, true, StatusID.NoxiousGnash, StatusID.NoxiousGnash_4099) ?? false) &&
+            (HostileTarget?.HasStatus(true, StatusID.NoxiousGnash, StatusID.NoxiousGnash_4099) ?? false) &&
             !HaveHuntersVenom && !HaveSwiftVenom &&
             !HavePoisedBlood && !HavePoisedFang)
 
@@ -198,10 +198,10 @@ public sealed class VPR_Default : ViperRotation
             //Dreadwinder Usage
             if (PitOfDreadPvE.CanUse(out act, usedUp: true) && RattlingCoilStacks ==0 && ComboMark2 == 1 && ComboMark4 ==1 && DreadCombo is (DreadCombo)0) return true;
             //Dreadwinder Usage
-            if (DreadwinderPvE.CanUse(out act, usedUp: true) && DreadwinderPvE.Cooldown.CurrentCharges == 1 && RattlingCoilStacks == 0 && ComboMark2 == 1 && ComboMark4 == 1 && DreadCombo is (DreadCombo)0) return true;
+            if (DreadwinderPvE.CanUse(out act, usedUp: true) && DreadwinderPvE.Cooldown.CurrentCharges == 1 && RattlingCoilStacks == 0 && ComboMark2 == 1 && ComboMark4 == 1 && DreadCombo is (DreadCombo)0 && DreadwinderPvE.Target.Target?.StatusTime(true, StatusID.NoxiousGnash) <= 20) return true;
         }
 
-        if (!HostileTarget?.HasStatus(true, StatusID.NoxiousGnash, StatusID.NoxiousGnash_4099) ?? false || (HostileTarget?.WillStatusEnd(20, true, StatusID.NoxiousGnash, StatusID.NoxiousGnash_4099) ?? false))
+        if (!HostileTarget?.HasStatus(true, StatusID.NoxiousGnash) ?? false || (HostileTarget?.WillStatusEnd(20, true, StatusID.NoxiousGnash) ?? false))
         {
             if (DreadMawPvE.CanUse(out act)) return true;
             if (DreadFangsPvE.CanUse(out act)) return true;
@@ -209,7 +209,7 @@ public sealed class VPR_Default : ViperRotation
         else
         {
             if (SteelMawPvE.CanUse(out act)) return true;
-            if (SteelFangsPvE.CanUse(out act)) return true;
+            if (SteelFangsPvE.CanUse(out act) && SteelFangsPvE.Target.Target?.StatusTime(true, StatusID.NoxiousGnash) > 20) return true;
         }
         if (DreadMawPvE.CanUse(out act)) return true;
         if (DreadFangsPvE.CanUse(out act)) return true;

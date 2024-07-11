@@ -83,16 +83,20 @@ public sealed class BRD_Default : BardRotation
                 if (!BindWANDEnough) return true;
             }
 
-            if (RadiantEncorePvE.CanUse(out act,skipAoeCheck:true) && Player.HasStatus(true, StatusID.RadiantEncoreReady)) return true;
+            
 
             if (RadiantFinalePvE.CanUse(out act, skipAoeCheck: true))
+                
+                if (RadiantEncorePvE.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true) && Player.HasStatus(true, StatusID.RadiantEncoreReady)) return true;
             {
                 if (Player.HasStatus(true, StatusID.RagingStrikes) && RagingStrikesPvE.Cooldown.ElapsedOneChargeAfterGCD(1)) return true;
             }
 
             if (BattleVoicePvE.CanUse(out act, skipAoeCheck: true))
             {
-                if (IsLastAction(true, RadiantFinalePvE)) return true;
+                if (nextGCD.IsTheSameTo(true, RadiantFinalePvE)) return true;
+
+                if (nextGCD.IsTheSameTo(true, RadiantEncorePvE)) return true;
 
                 if (Player.HasStatus(true, StatusID.RagingStrikes) && RagingStrikesPvE.Cooldown.ElapsedOneChargeAfterGCD(1)) return true;
             }
