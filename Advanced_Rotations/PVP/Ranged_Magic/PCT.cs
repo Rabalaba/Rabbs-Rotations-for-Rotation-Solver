@@ -33,6 +33,7 @@ public sealed class PCT_Default_PvP : PictomancerRotation
         {
             if (SubtractivePalettePvP.CanUse(out act)) return true;
         }
+
         return base.EmergencyAbility(nextGCD, out act);
     }
     #endregion

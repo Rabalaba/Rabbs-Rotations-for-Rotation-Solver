@@ -30,13 +30,16 @@ public sealed class PCT_Default : PictomancerRotation
     {
         act = null;
 
-            return base.EmergencyAbility(nextGCD, out act);
+        return base.EmergencyAbility(nextGCD, out act);
     }
     #endregion
 
     #region oGCD Logic
     protected override bool AttackAbility(IAction nextGCD, out IAction? act)
     {
+
+        if (!LucidDreamingPvE.CanUse(out act, skipAoeCheck: true, skipCastingCheck: true, skipComboCheck: true, skipStatusProvideCheck: true, usedUp: true) && !LucidDreamingPvE.Cooldown.IsCoolingDown && Player.CurrentMp < 8000) return true;
+
         if (Player.HasStatus(true, StatusID.StarryMuse))
         {
             if (Player.HasStatus(true, StatusID.SubtractiveSpectrum) && !Player.HasStatus(true, StatusID.SubtractivePalette))
@@ -81,7 +84,10 @@ public sealed class PCT_Default : PictomancerRotation
 
     protected override bool GeneralGCD(out IAction? act)
     {
-
+        if (Role is JobRole.RangedMagical)
+        {
+            if (FireInRedPvE.CanUse(out act)) return true;
+        }
         if (StarPrismPvE.CanUse(out act) && Player.HasStatus(true, StatusID.Starstruck)) return true;
 
         if (RainbowDripPvE.CanUse(out act) && Player.HasStatus(true, StatusID.RainbowBright)) return true;
@@ -181,7 +187,7 @@ public sealed class PCT_Default : PictomancerRotation
         if (InCombat)
         {
 
-            if (StarryMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && LandscapeMotifDrawn) return true;
+            if (ScenicMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && LandscapeMotifDrawn) return true;
             if (MogOfTheAgesPvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && MooglePortraitReady) return true;
             if (StrikingMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && WeaponMotifDrawn) return true;
             if (PomMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && CreatureMotifDrawn && LivingMusePvE.AdjustedID == PomMusePvE.ID) return true;
