@@ -41,6 +41,11 @@ public sealed class VPR_Default : ViperRotation
     {
         act = null;
 
+        if (TwinfangBitePvE.CanUse(out act) && HaveHuntersVenom) return true;
+        if (TwinbloodBitePvE.CanUse(out act) && HaveSwiftVenom) return true;
+        if (UncoiledTwinfangPvE.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true) && HavePoisedFang) return true;
+        if (ThisCoil.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true) && HavePoisedBlood) return true;
+
         return base.EmergencyAbility(nextGCD, out act);
     }
     #endregion
@@ -55,10 +60,10 @@ public sealed class VPR_Default : ViperRotation
         if (SerpentsIrePvE.CanUse(out act) && InCombat && RattlingCoilStacks <= 2 && !HaveReawakend) return true;
         if (TwinfangThreshPvE.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true) && HaveFellHuntersVenom) return true;
         if (TwinbloodThreshPvE.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true) && HaveFellskintVenom) return true;
-        if (TwinfangBitePvE.CanUse(out act) && HaveHuntersVenom) return true;
-        if (TwinbloodBitePvE.CanUse(out act) && HaveSwiftVenom) return true;
-        if (UncoiledTwinfangPvE.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true) && HavePoisedFang) return true;
-        if (ThisCoil.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true) && HavePoisedBlood) return true;
+
+
+        
+
         if (LastLashPvE.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true) && SerpentsTailId == LastLashPvE.ID) return true;
         if (DeathRattlePvE.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true) && SerpentsTailId == DeathRattlePvE.ID) return true;
         if (FirstLegacyPvE.CanUse(out act, skipComboCheck: true, skipCastingCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true) && SerpentsTailId == FirstLegacyPvE.ID) return true;

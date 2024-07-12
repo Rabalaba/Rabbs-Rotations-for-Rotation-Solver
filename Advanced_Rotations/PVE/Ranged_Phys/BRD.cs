@@ -216,6 +216,7 @@ public sealed class BRD_Default : BardRotation
 
         if (HeartbreakShotPvE.CanUse(out act, usedUp: true))
         {
+            if (isBattleVoice || isRadiantFinale || (isRagingSoon && (isBloodTrait || isNoBloodTrait))) return false;
             if (isEmpyrealArrowCD || isEmpyrealSoon || isEmpyrealLevel || isRepertoire) return true;
         }
 

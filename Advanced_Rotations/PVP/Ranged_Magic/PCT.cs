@@ -109,7 +109,7 @@ public sealed class PCT_Default_PvP : PictomancerRotation
         }
 
         if (HolyInWhitePvP.CanUse(out act, skipAoeCheck: true, usedUp: true)) return true;
-        if (IsMoving && Player.HasStatus(true, StatusID.SubtractivePalette_4102))
+        if (IsMoving && Player.HasStatus(true, StatusID.SubtractivePalette_4102) && HolyInWhitePvE.Cooldown.CurrentCharges == 0)
         {
             if (ReleaseSubtractivePalettePvP.CanUse(out act)) return true;
         }
