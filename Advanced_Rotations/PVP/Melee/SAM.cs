@@ -49,10 +49,7 @@ public sealed class SAM_DefaultPvP : SamuraiRotation
 
     public static IBaseAction Zantetsuken { get; } = new BaseAction((ActionID)29537);
 
-    public static void ZantetsukenAutoKill()
-    {
-        Zantetsuken.Setting.StatusNeed = [StatusID.Kuzushi]; // Assuming appropriate access
-    }
+    public static IBaseAction Dash { get; } = new BaseAction((ActionID)29532);
 
     private bool TryPurify(out IAction? action)
     {
@@ -87,7 +84,7 @@ public sealed class SAM_DefaultPvP : SamuraiRotation
         if (GuardCancel && Player.HasStatus(true, StatusID.Guard)) return false;
         if (TryPurify(out act)) return true;
         if (UseRecuperatePvP && Player.CurrentHp / Player.MaxHp * 100 < RCValue && RecuperatePvP.CanUse(out act)) return true;
-
+        if (Dash.CanUse(out act, usedUp: true, skipAoeCheck: true, skipCastingCheck: true, skipComboCheck: true) && Dash.Target.Target?.DistanceToPlayer() > 5) return true;
         return base.EmergencyAbility(nextGCD, out act);
     }
 
@@ -95,6 +92,7 @@ public sealed class SAM_DefaultPvP : SamuraiRotation
     {
         act = null;
         if (GuardCancel && Player.HasStatus(true, StatusID.Guard)) return false;
+        if (Dash.CanUse(out act, usedUp:true, skipAoeCheck:true, skipCastingCheck:true, skipComboCheck:true) && Dash.Target.Target?.DistanceToPlayer() > 5) return true;
         if (MineuchiPvP.CanUse(out act)) return true;
         if (MeikyoShisuiPvP.CanUse(out act)) return true;
         return base.AttackAbility(nextGCD, out act);
@@ -112,7 +110,7 @@ public sealed class SAM_DefaultPvP : SamuraiRotation
         if (UIState.Instance()->LimitBreakController.CurrentUnits >= 4000)
         {
             if (HissatsuChitenPvP.CanUse(out act)) return true;
-            if (Zantetsuken.CanUse(out act) && (Zantetsuken.Target.Target?.HasStatus(true, StatusID.Kuzushi) ?? false)) return true;
+            if (Zantetsuken.CanUse(out act, skipAoeCheck:true) && (Zantetsuken.Target.Target?.HasStatus(true, StatusID.Kuzushi) ?? false)) return true;
         }
                 // Early exits for Guard status or Sprint usage
                 if (GuardCancel && Player.HasStatus(true, StatusID.Guard)) return false;

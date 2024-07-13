@@ -1,5 +1,6 @@
 ﻿
 using Dalamud.Game.ClientState.JobGauge.Types;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using RotationSolver.Basic.Data;
 using System;
 
@@ -180,7 +181,7 @@ public sealed class VPR_Default : ViperRotation
         {
 
         //Reawakend Usage
-        if ((SerpentOffering >= 50|| Player.HasStatus(true, StatusID.ReadyToReawaken)) && SerpentsIrePvE.Cooldown.RecastTimeRemainOneCharge > (100-SerpentOffering) &&
+        if ((SerpentOffering >= 50|| Player.HasStatus(true, StatusID.ReadyToReawaken)) && SerpentsIrePvE.Cooldown.RecastTimeRemainOneCharge > (100-SerpentOffering) &&  (DreadwinderPvE.Cooldown.CurrentCharges == 0 || (DreadwinderPvE.Cooldown.CurrentCharges == 1 && DreadwinderPvE.Cooldown.RecastTimeRemainOneCharge > 10)) &&
             HaveSwiftScaled &&
             HaveHuntersInstinct &&
             (HostileTarget?.HasStatus(true, StatusID.NoxiousGnash, StatusID.NoxiousGnash_4099) ?? false) &&
@@ -235,4 +236,11 @@ public sealed class VPR_Default : ViperRotation
 
     #region Extra Methods
     #endregion
+    public unsafe override void DisplayStatus()
+    {
+        //motif
+        ImGui.Text("debug " + DreadwinderPvE.Cooldown.RecastTimeRemainOneCharge.ToString());
+
+        base.DisplayStatus();
+    }
 }

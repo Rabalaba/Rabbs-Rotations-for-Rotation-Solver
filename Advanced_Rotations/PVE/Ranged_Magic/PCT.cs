@@ -101,7 +101,7 @@ public sealed class PCT_Default : PictomancerRotation
         {
             if (MadeenPortraitReady)
             {
-                if (RetributionOfTheMadeenPvE.CanUse(out act)) return true;
+                if (RetributionOfTheMadeenPvE.CanUse(out act, skipAoeCheck:true)) return true;
             }
             if (MooglePortraitReady)
             {
