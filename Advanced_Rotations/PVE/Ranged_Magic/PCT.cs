@@ -189,7 +189,7 @@ public sealed class PCT_Default : PictomancerRotation
             if (StrikingMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && WeaponMotifDrawn) return true;
             if (PomMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && CreatureMotifDrawn && LivingMusePvE.AdjustedID == PomMusePvE.ID) return true;
             if (WingedMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && CreatureMotifDrawn && LivingMusePvE.AdjustedID == WingedMusePvE.ID) return true;
-            if (ClawedMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && CreatureMotifDrawn && LivingMusePvE.AdjustedID == ClawedMusePvE.ID) return true;
+            if (ClawedMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && CreatureMotifDrawn && LivingMusePvE.AdjustedID == ClawedMusePvE.ID) return true; 
             if (FangedMusePvE.CanUse(out act, skipCastingCheck: true, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true, usedUp: true) && CreatureMotifDrawn && LivingMusePvE.AdjustedID == FangedMusePvE.ID) return true;
         }
 
