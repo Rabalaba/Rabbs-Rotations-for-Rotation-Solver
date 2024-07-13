@@ -4,7 +4,7 @@
         <TargetFramework>net8.0-windows</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Authors>Rabbs</Authors>
-        <Version>1.1.2.7</Version>
+        <Version>1.1.2.8</Version>
         <PlatformTarget>x64</PlatformTarget>
         <Platforms>x64</Platforms>
 
@@ -83,7 +83,6 @@
 
     <ItemGroup>
       <Folder Include="Duty\" />
-      <Folder Include="PVP\Melee\" />
       <Folder Include="PVP\Tank\" />
     </ItemGroup>
 

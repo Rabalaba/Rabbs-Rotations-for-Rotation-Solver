@@ -1,21 +1,36 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using FFXIVClientStructs.FFXIV.Client.Game;
+using System.ComponentModel.DataAnnotations;
 
 namespace RabbsRotationsNET8.PVE.Melee;
 
 [Rotation("Rabbs Samurai", CombatType.PvE, GameVersion = "6.58")]
 [SourceCode(Path = "main/RabbsRotations/Melee/SAM.cs")]
-[Api(1)]
+[Api(2)]
 public sealed class SAM_PVE : SamuraiRotation
 {
 
     [RotationSolver.Basic.Attributes.Range(25, 85, ConfigUnitType.None, 5)]
 
 
-    public static IBaseAction GekkoPrepull { get; } = new BaseAction((ActionID)7481);
+    public static IBaseAction JinpuFix { get; } = new BaseAction((ActionID)7478);
 
-    public static void SetGekkoPrepullTargetTypeToBeAttacked()
+    public static void Jinpufixcombo()
     {
-        GekkoPrepull.Setting.TargetType = TargetType.BeAttacked; // Assuming appropriate access
+        JinpuFix.Setting.ComboIds = [ActionID.HakazePvE, ActionID.GyofuPvE]; // Assuming appropriate access
+    }
+
+    public static IBaseAction Shifufix { get; } = new BaseAction((ActionID)7479);
+
+    public static void Shifufixcombo()
+    {
+        Shifufix.Setting.ComboIds = [ActionID.HakazePvE, ActionID.GyofuPvE]; // Assuming appropriate access
+    }
+
+    public static IBaseAction Yukikazefix { get; } = new BaseAction((ActionID)7480);
+
+    public static void Yukikazecombo()
+    {
+        Yukikazefix.Setting.ComboIds = [ActionID.HakazePvE, ActionID.GyofuPvE]; // Assuming appropriate access
     }
 
     public static IBaseAction MeikoPrePull { get; } = new BaseAction((ActionID)7499);
@@ -133,14 +148,17 @@ public sealed class SAM_PVE : SamuraiRotation
         }
         if ((!HasMoon || IsMoonTimeLessThanFlower || !OkaPvE.EnoughLevel) && MangetsuPvE.CanUse(out act, skipAoeCheck: HaveMeikyoShisui && !HasGetsu)) return true;
         if ((!HasFlower || !IsMoonTimeLessThanFlower) && OkaPvE.CanUse(out act, skipAoeCheck: HaveMeikyoShisui && !HasKa)) return true;
-        if (!HasSetsu && YukikazePvE.CanUse(out act, skipAoeCheck: HaveMeikyoShisui && HasGetsu && HasKa && !HasSetsu)) return true;
+        Yukikazecombo();
+        if (!HasSetsu && Yukikazefix.CanUse(out act, skipAoeCheck: HaveMeikyoShisui && HasGetsu && HasKa && !HasSetsu)) return true;
         if (GekkoPvE.CanUse(out act, skipComboCheck: HaveMeikyoShisui && !HasGetsu)) return true;
         if (KashaPvE.CanUse(out act, skipComboCheck: HaveMeikyoShisui && !HasKa)) return true;
-        if ((!HasMoon || IsMoonTimeLessThanFlower || !ShifuPvE.EnoughLevel) && JinpuPvE.CanUse(out act)) return true;
-        if ((!HasFlower || !IsMoonTimeLessThanFlower) && ShifuPvE.CanUse(out act)) return true;
+        Jinpufixcombo();
+        if ((!HasMoon || IsMoonTimeLessThanFlower || !ShifuPvE.EnoughLevel) && JinpuFix.CanUse(out act)) return true;
+        Shifufixcombo();
+        if ((!HasFlower || !IsMoonTimeLessThanFlower) && Shifufix.CanUse(out act)) return true;
         if (FukoPvE.CanUse(out act)) return true;
         if (!FukoPvE.EnoughLevel && FugaPvE.CanUse(out act)) return true;
-        if (HakazePvE.CanUse(out act)) return true;
+        if (GyofuPvE.CanUse(out act)) return true;
 
         if (EnpiPvE.CanUse(out act)) return true;
 
