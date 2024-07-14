@@ -110,7 +110,7 @@ public sealed class SAM_DefaultPvP : SamuraiRotation
         if (UIState.Instance()->LimitBreakController.CurrentUnits >= 4000)
         {
             if (HissatsuChitenPvP.CanUse(out act)) return true;
-            if (Zantetsuken.CanUse(out act, skipAoeCheck:true) && (Zantetsuken.Target.Target?.HasStatus(true, StatusID.Kuzushi) ?? false)) return true;
+            //if (Zantetsuken.CanUse(out act, skipAoeCheck:true) && (Zantetsuken.Target.Target?.HasStatus(true, StatusID.Kuzushi) ?? false)) return true;
         }
                 // Early exits for Guard status or Sprint usage
                 if (GuardCancel && Player.HasStatus(true, StatusID.Guard)) return false;
