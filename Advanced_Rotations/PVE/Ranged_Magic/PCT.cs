@@ -85,9 +85,9 @@ public sealed class PCT_Default : PictomancerRotation
     protected override bool GeneralGCD(out IAction? act)
     {
 
-        if (StarPrismPvE.CanUse(out act) && Player.HasStatus(true, StatusID.Starstruck)) return true;
+        if (StarPrismPvE.CanUse(out act, skipAoeCheck:true) && Player.HasStatus(true, StatusID.Starstruck)) return true;
 
-        if (RainbowDripPvE.CanUse(out act) && Player.HasStatus(true, StatusID.RainbowBright)) return true;
+        if (RainbowDripPvE.CanUse(out act, skipAoeCheck:true) && Player.HasStatus(true, StatusID.RainbowBright)) return true;
 
         // white/black paint use while moving
         if (IsMoving)

@@ -11,7 +11,6 @@ using static RabbsRotations.Job_Helpers.CustomComboFunctions;
 using Lumina.Excel.GeneratedSheets;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.Game.Gauge;
-using Dalamud.Game.ClientState.JobGauge.Types;
 using Svg.FilterEffects;
 using Dalamud.Plugin.Services;
 
@@ -25,8 +24,8 @@ public unsafe sealed class NIN_PVE : NinjaRotation
     private static bool inMudraState => Player.HasStatus(true, StatusID.Mudra);
 
     public static IJobGauges JobGauges { get; private set; } = null!;
-    private static NinjaGauge* gauge = (NinjaGauge*)NIN_PVE.JobGauges.Get<NINGauge>().Address;
-    private static byte stacks = gauge->Kazematoi;
+    //private static NinjaGauge* gauge = (NinjaGauge*)NIN_PVE.JobGauges.Get<NINGauge>().Address;
+    //private static byte stacks = gauge->Kazematoi;
     private static readonly MudraCasting mudraCasting = new();
     private static bool inTCJ => Player.HasStatus(true, StatusID.TenChiJin);
     private static readonly MudraCasting mudraState = new();
@@ -43,6 +42,10 @@ public unsafe sealed class NIN_PVE : NinjaRotation
         return base.EmergencyAbility(nextGCD, out act);
     }
 
+    //public static byte stacks == NinjaGauge.Kazematoi;
+
+
+
     protected unsafe override bool GeneralGCD(out IAction? act)
     {
         bool setupSuitonWindow = GetCooldownRemainingTime(TrickAttackPvE) <= 10 && !Player.HasStatus(true, StatusID.Suiton);
@@ -51,10 +54,10 @@ public unsafe sealed class NIN_PVE : NinjaRotation
         bool poolCharges = GetRemainingCharges(TenPvE) == 1 && TenPvE.Cooldown.RecastTimeRemainOneCharge < 2 || HostileTarget != null && HostileTarget.HasStatus(true, StatusID.TrickAttack);
         uint actionID = 0;
 
-        if (stacks != 0)
-        {
-            if (SpinningEdgePvE.CanUse(out act)) return true;
-        }
+        //if (stacks != 0)
+        //{
+            //if (SpinningEdgePvE.CanUse(out act)) return true;
+        //}
 
         /*
         if (inTCJ)

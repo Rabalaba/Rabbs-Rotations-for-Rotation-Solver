@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+﻿using Jobgauge = FFXIVClientStructs.FFXIV.Client.Game.Gauge;
+using System.ComponentModel;
+using FFXIVClientStructs.FFXIV.Client.Game.Gauge;
 
 namespace RabbsRotationsNET8.Magical;
 
@@ -17,8 +19,11 @@ public sealed class SMN_Default : SummonerRotation
     [RotationConfig(CombatType.PvE, Name = "Egi Order:\n  1 = Titan->Garuda->Ifrit.\n  2 = Titan->Ifrit->Garuda.\n  3 = Garuda->Titan->Ifrit.\n  4 = Garuda->Ifrit->Titan.\n  5 = Ifrit->Titan->Garuda.\n  6 = Ifrit->Garuda->Titan")]
     public int EgiOrder { get; set; } = 1;
 
+    //public static bool thisenum => AetherFlags.Aetherflow1.HasFlag(AetherFlags.Aetherflow2);
 
     public IBaseAction SummonTitan => _SummonTitan.Value;
+
+    //public static bool HasAetherflowStacks => AetherFlags.Aetherflow.HasFlag((Enum)FFXIVClientStructs.FFXIV.Client.Game.Gauge.AetherFlags.Aetherflow1) || JobGauge.AetherFlags.HasFlag((Enum)FFXIVClientStructs.FFXIV.Client.Game.Gauge.AetherFlags.Aetherflow2);
 
     private readonly Lazy<IBaseAction> _SummonTitan = new Lazy<IBaseAction>(delegate
     {
