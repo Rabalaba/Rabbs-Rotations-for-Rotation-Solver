@@ -1,18 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-//using static FFXIVClientStructs.FFXIV.Client.Game.Control.GazeController;
-using RabbsRotations.JobHelpers;
-using static RabbsRotations.JobHelpers.NIN;
-using RotationSolver.Basic.Data;
+﻿using static RabbsRotations.JobHelpers.NIN;
 using static RabbsRotations.Job_Helpers.CustomComboFunctions;
-using Lumina.Excel.GeneratedSheets;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.Game.Gauge;
-using Svg.FilterEffects;
-using Dalamud.Plugin.Services;
 
 namespace RabbsRotationsNET8.PVE.Melee;
 [Rotation("Rabbs Ninja", CombatType.PvE, GameVersion = "6.58")]
@@ -23,9 +11,9 @@ public unsafe sealed class NIN_PVE : NinjaRotation
 {
     private static bool inMudraState => Player.HasStatus(true, StatusID.Mudra);
 
-    public static IJobGauges JobGauges { get; private set; } = null!;
-    //private static NinjaGauge* gauge = (NinjaGauge*)NIN_PVE.JobGauges.Get<NINGauge>().Address;
-    //private static byte stacks = gauge->Kazematoi;
+    //public static IJobGauges? JobGauges { get; private set; }
+    //private static readonly NinjaGauge* gauge = (NinjaGauge*)JobGauges.Get<NINGauge>()?.Address;
+
     private static readonly MudraCasting mudraCasting = new();
     private static bool inTCJ => Player.HasStatus(true, StatusID.TenChiJin);
     private static readonly MudraCasting mudraState = new();
@@ -46,18 +34,21 @@ public unsafe sealed class NIN_PVE : NinjaRotation
 
 
 
-    protected unsafe override bool GeneralGCD(out IAction? act)
+    protected override bool GeneralGCD(out IAction? act)
     {
         bool setupSuitonWindow = GetCooldownRemainingTime(TrickAttackPvE) <= 10 && !Player.HasStatus(true, StatusID.Suiton);
         bool chargeCheck = GetRemainingCharges(TenPvE) == 2 || GetRemainingCharges(TenPvE) == 1 && TenPvE.Cooldown.RecastTimeRemainOneCharge < 3;
         bool inTrickBurstSaveWindow = GetCooldownRemainingTime(TrickAttackPvE) <= 15 && SuitonPvE.EnoughLevel;
         bool poolCharges = GetRemainingCharges(TenPvE) == 1 && TenPvE.Cooldown.RecastTimeRemainOneCharge < 2 || HostileTarget != null && HostileTarget.HasStatus(true, StatusID.TrickAttack);
-        uint actionID = 0;
+        byte stacks = FFXIVClientStructs.FFXIV.Client.Game.JobGaugeManager.Instance()->Ninja.Kazematoi;
+        //uint actionID = 0;
 
-        //if (stacks != 0)
-        //{
-            //if (SpinningEdgePvE.CanUse(out act)) return true;
-        //}
+        if (stacks <5)
+        {
+            if (ArmorCrushPvE.CanUse(out act)) return true;
+            if (GustSlashPvE.CanUse(out act)) return true;
+            if (SpinningEdgePvE.CanUse(out act)) return true;
+        }
 
         /*
         if (inTCJ)
@@ -344,6 +335,14 @@ public unsafe sealed class NIN_PVE : NinjaRotation
         }
 
         return base.AttackAbility(nextGCD, out act);
+    }
+    public unsafe override void DisplayStatus()
+    {
+        byte stacks = FFXIVClientStructs.FFXIV.Client.Game.JobGaugeManager.Instance()->Ninja.Kazematoi;
+
+        ImGui.Text("debug " + stacks.ToString());
+
+        base.DisplayStatus();
     }
 }
 

@@ -84,7 +84,7 @@ public sealed class PCT_Default : PictomancerRotation
 
     protected override bool GeneralGCD(out IAction? act)
     {
-
+        var IsTargetDying = HostileTarget?.IsDying() ?? false;
         if (StarPrismPvE.CanUse(out act, skipAoeCheck:true) && Player.HasStatus(true, StatusID.Starstruck)) return true;
 
         if (RainbowDripPvE.CanUse(out act, skipAoeCheck:true) && Player.HasStatus(true, StatusID.RainbowBright)) return true;
@@ -145,7 +145,7 @@ public sealed class PCT_Default : PictomancerRotation
         if (RainbowDripPvE.CanUse(out act)) return true;
         
         }
-        if (InCombat && (HasSwift || !HasHostilesInMaxRange) && (!CreatureMotifDrawn || (!WeaponMotifDrawn && !Player.HasStatus(true, StatusID.HammerTime)) || !LandscapeMotifDrawn))
+        if (InCombat && !IsTargetDying && (HasSwift || !HasHostilesInMaxRange) && (!CreatureMotifDrawn || (!WeaponMotifDrawn && !Player.HasStatus(true, StatusID.HammerTime)) || !LandscapeMotifDrawn))
         {
 
             if (!LandscapeMotifDrawn)
