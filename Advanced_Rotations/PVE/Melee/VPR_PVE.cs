@@ -28,6 +28,7 @@ public sealed class VPR_Default : ViperRotation
     private static bool HaveGrimHuntersVenom => Player.HasStatus(true, StatusID.GrimhuntersVenom);
     private static bool HaveGrimSkinVenom => Player.HasStatus(true, StatusID.GrimskinsVenom);
     private static float? BloodTime => HostileTarget?.StatusTime(true, StatusID.NoxiousGnash);
+    private static bool BloodTimeAoe => AllHostileTargets.Any(p => p.StatusTime(true, StatusID.NoxiousGnash) < 20 && p.DistanceToPlayer() <= 5);
     public static bool IsHuntersTimeLessThanSwiftscaled => CustomRotation.Player.StatusTime(true, StatusID.HuntersInstinct) < CustomRotation.Player.StatusTime(true, StatusID.Swiftscaled);
     public static bool IsHindstongueTimeLessThanHindsbane => CustomRotation.Player.StatusTime(true, StatusID.HindstungVenom) < CustomRotation.Player.StatusTime(true, StatusID.HindsbaneVenom);
     private static int MyGeneration => EnhancedSerpentsLineageTrait.EnoughLevel ? 6-AnguineTribute:5-AnguineTribute;
@@ -106,6 +107,8 @@ public sealed class VPR_Default : ViperRotation
     {
         uint ComboMark = AdjustId(SteelFangsPvE.ID);
         int ComboMark2 = ComboMark == SteelFangsPvE.ID ? 1 : ComboMark == HuntersStingPvE.ID ? 2 : 3;
+        uint ComboMark3 = AdjustId(SteelMawPvE.ID);
+        int ComboMark4 = ComboMark3== SteelMawPvE.ID ? 1 : ComboMark3 == HuntersBitePvE.ID ? 2 : 3;
         act = null;
         
         if (MyGeneration is 1)
@@ -173,23 +176,67 @@ public sealed class VPR_Default : ViperRotation
 
         }
 
+
+        if (ComboMark4 == 3)
+        {
+            if (HaveGrimSkinVenom)
+            {
+                if (DreadMawPvE.CanUse(out act)) return true;
+            }
+            
+            if (SteelMawPvE.CanUse(out act)) return true;
+            
+        }
+        if (ComboMark4 == 2)
+        {
+            if (IsHuntersTimeLessThanSwiftscaled)
+            {
+                if (SteelMawPvE.CanUse(out act)) return true;
+            }
+            
+            if (DreadMawPvE.CanUse(out act)) return true;
+            
+        }
+        if (ComboMark4 == 1)
+        {
+            if (BloodTimeAoe)
+            {
+                if (DreadMawPvE.CanUse(out act)) return true;
+                
+            }
+            if (SteelMawPvE.CanUse(out act)) return true;
+            
+        }
+
         if (ComboMark2 == 3)
         {
+            
             if (HaveBaneVenom)
+            {
                 if (DreadFangsPvE.CanUse(out act)) return true;
+            }
+            
             if (SteelFangsPvE.CanUse(out act)) return true;
         }
         if (ComboMark2 == 2)
         {
+            
             if (HaveFlankingVenom)
+            {
                 if (SteelFangsPvE.CanUse(out act)) return true;
+            }
+            
             if (DreadFangsPvE.CanUse(out act)) return true;
         }
         if (ComboMark2 == 1)
         {
             if (BloodTime < 20)
+            {
+
                 if (DreadFangsPvE.CanUse(out act)) return true;
-           if (SteelFangsPvE.CanUse(out act)) return true;
+            }
+
+            if (SteelFangsPvE.CanUse(out act)) return true;
         }
 
 
