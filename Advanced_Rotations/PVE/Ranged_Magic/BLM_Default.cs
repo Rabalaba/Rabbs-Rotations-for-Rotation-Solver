@@ -1,37 +1,15 @@
 ﻿
 namespace RabbsRotationsNET8.Magical;
 
-[Rotation("Rabbs BLM", CombatType.PvE, GameVersion = "6.58")]
+[Rotation("Rabbs Infinite Power-dox", CombatType.PvE, GameVersion = "6.58")]
 [SourceCode(Path = "main/DefaultRotations/Magical/BLM_Default.cs")]
-[Api(2)]
+[Api(4)]
 public class BLM_Default : BlackMageRotation
 {
-    private bool NeedToGoIce
-    {
-        get
-        {
-            //Can use Despair.
-            if (DespairPvE.EnoughLevel && CurrentMp >= DespairPvE.Info.MPNeed) return false;
 
-            //Can use Fire1
-            if (FirePvE.EnoughLevel && CurrentMp >= FirePvE.Info.MPNeed) return false;
+    public  IBaseAction FixedUS { get; } = new BaseAction((ActionID)16506);
 
-            return true;
-        }
-    }
-
-    private bool NeedToTransposeGoIce(bool usedOne)
-    {
-        if (!NeedToGoIce) return false;
-        if (!ParadoxPvE.EnoughLevel) return false;
-        var compare = usedOne ? -1 : 0;
-        var count = PolyglotStacks;
-        if (count == compare++) return false;
-        if (count == compare++ && !EnchinaEndAfterGCD(2)) return false;
-        if (count >= compare && (HasFire || SwiftcastPvE.Cooldown.WillHaveOneChargeGCD(2) || TriplecastPvE.Cooldown.WillHaveOneChargeGCD(2))) return true;
-        if (!HasFire && !SwiftcastPvE.Cooldown.WillHaveOneChargeGCD(2) && !TriplecastPvE.CanUse(out _, gcdCountForAbility: 8)) return false;
-        return true;
-    }
+    public  IBaseAction FixedMF { get; } = new BaseAction((ActionID)158);
 
     [RotationConfig(CombatType.PvE, Name = "Use Transpose to Astral Fire before Paradox")]
     public bool UseTransposeForParadox { get; set; } = true;
@@ -42,329 +20,144 @@ public class BLM_Default : BlackMageRotation
     [RotationConfig(CombatType.PvE, Name = @"Use ""Double Paradox"" rotation [N15]")]
     public bool UseN15 { get; set; } = false;
 
+    public bool NextGCDisInstant => Player.HasStatus(true, StatusID.Triplecast, StatusID.Swiftcast);
+
     protected override IAction? CountDownAction(float remainTime)
     {
         IAction act;
-        if (remainTime < FireIiiPvE.Info.CastTime + CountDownAhead)
+        if (remainTime < 1)
         {
-            if (FireIiiPvE.CanUse(out act)) return act;
+            if (TriplecastPvE.CanUse(out act, usedUp: true) && !NextGCDisInstant) return act;
+        }
+        if (remainTime < BlizzardIiiPvE.Info.CastTime + CountDownAhead)
+        {
+            if (BlizzardIiiPvE.CanUse(out act)) return act;
         }
         return base.CountDownAction(remainTime);
     }
 
     protected override bool AttackAbility(IAction nextGCD, out IAction? act)
     {
-        if (IsBurst && UseBurstMedicine(out act)) return true;
-        if (InUmbralIce)
+        if (InCombat)
         {
-            if (UmbralIceStacks == 2 && !HasFire
-                && !IsLastGCD(ActionID.ParadoxPvE))
+            if (AstralSoulStacks == 6 && CurrentMp > 0)
+            {
+                if (DespairPvE.CanUse(out act)) return true;
+            }
+            if (TriplecastPvE.Cooldown.CurrentCharges == 2)
+            {
+                if (AstralSoulStacks == 6)
+                {
+                    if (TriplecastPvE.CanUse(out act)) return true;
+                }
+
+                if (InUmbralIce && UmbralHearts == 0)
+                {
+                    if (TriplecastPvE.CanUse(out act)) return true;
+                }
+            }
+            if (TriplecastPvE.Cooldown.CurrentCharges > 0 && InAstralFire)
+            {
+                if (TriplecastPvE.CanUse(out act)) return true;
+            }
+            if (AstralSoulStacks == 6 && InAstralFire && !NextGCDisInstant)
             {
                 if (SwiftcastPvE.CanUse(out act)) return true;
-                if (TriplecastPvE.CanUse(out act, usedUp: true)) return true;
             }
 
-            if (UmbralIceStacks < 3 && LucidDreamingPvE.CanUse(out act)) return true;
-            //if (SharpcastPvE.CanUse(out act, usedUp: true)) return true;
+            if (IsPolyglotStacksMaxed)
+            {
+                if (FoulPvE.CanUse(out act)) return true;
+                if (XenoglossyPvE.CanUse(out act)) return true;
+            }
+            if (UmbralIceStacks == 3 && UmbralHearts == 3 && InUmbralIce)
+            {
+                if (TransposePvE.CanUse(out act)) return true;
+            }
+
+
+            if (InAstralFire && AstralFireStacks == 3 && !Player.HasStatus(true, StatusID.Firestarter))
+            {
+                if (TransposePvE.CanUse(out act)) return true;
+            }
+
+            //manafont can only be used in astral fire, it gives 3 umbral hearts. If we are at 2 or more our next umbral soul will kick off paradox
+            if (InAstralFire && UmbralHearts < 2 && !NextGCDisInstant && AstralSoulStacks == 0)
+            {
+                if (FixedMF.CanUse(out act)) return true;
+            }
+
+            if (UmbralHearts < 2 && !NextGCDisInstant && AstralSoulStacks == 0)
+            {
+                if (SwiftcastPvE.CanUse(out act)) return true;
+            }
         }
-        if (InAstralFire)
-        {
-            if (!CombatElapsedLess(6) && CombatElapsedLess(9) && LeyLinesPvE.CanUse(out act)) return true;
-            if (TriplecastPvE.CanUse(out act, gcdCountForAbility: 5)) return true;
-        }
-        if (AmplifierPvE.CanUse(out act)) return true;
+
+
         return base.AttackAbility(nextGCD, out act);
     }
 
     protected override bool EmergencyAbility(IAction nextGCD, out IAction? act)
     {
-        //To Fire
-        if (CurrentMp >= 7200 && UmbralIceStacks == 2 && ParadoxPvE.EnoughLevel)
-        {
-            if ((HasFire || HasSwift) && TransposePvE.CanUse(out act)) return true;
-        }
-        if (nextGCD.IsTheSameTo(false, FireIiiPvE) && HasFire)
-        {
-            if (TransposePvE.CanUse(out act)) return true;
-        }
 
-        //Using Manafont
-        if (InAstralFire)
-        {
-            if (CurrentMp == 0 && ManafontPvE.CanUse(out act)) return true;
-            //To Ice
-            if (NeedToTransposeGoIce(true) && TransposePvE.CanUse(out act)) return true;
-        }
 
         return base.EmergencyAbility(nextGCD, out act);
     }
 
     protected override bool GeneralGCD(out IAction? act)
     {
-        if (InFireOrIce(out act, out var mustGo)) return true;
-        if (mustGo) return false;
-        //Triplecast for moving.
-        if (IsMoving && HasHostilesInRange && TriplecastPvE.CanUse(out act, usedUp: true)) return true;
-
-        if (AddElementBase(out act)) return true;
-        if (ScathePvE.CanUse(out act)) return true;
-        if (MaintainStatus(out act)) return true;
-
-        return base.GeneralGCD(out act);
-    }
-
-    private bool InFireOrIce(out IAction? act, out bool mustGo)
-    {
-        act = null;
-        mustGo = false;
-        if (InUmbralIce)
+        
+        if (IsParadoxActive)
         {
-            if (GoFire(out act)) return true;
-            if (MaintainIce(out act)) return true;
-            if (DoIce(out act)) return true;
+            if (ParadoxPvE.CanUse(out act)) return true;    
         }
-        if (InAstralFire)
+        if (NextGCDisInstant)
         {
-            if (GoIce(out act)) return true;
-            if (MaintainFire(out act)) return true;
-            if (DoFire(out act)) return true;
+            if (InUmbralIce && UmbralHearts == 0)
+            {
+                if (BlizzardIvPvE.CanUse(out act)) return true;
+            }
+            if (AstralSoulStacks == 6)
+            {
+                if (FlareStarPvE.CanUse(out act)) return true;
+            }
+            if (InAstralFire && AstralSoulStacks < 6)
+            {
+                if (FlarePvE.CanUse(out act, skipAoeCheck:true)) return true;
+            }
+
         }
-        return false;
-    }
 
-    private bool GoIce(out IAction? act)
-    {
-        act = null;
-
-        if (!NeedToGoIce) return false;
-
-        //Use Manafont or transpose.
-        if ((!ManafontPvE.Cooldown.IsCoolingDown || NeedToTransposeGoIce(false))
-            && UseInstanceSpell(out act)) return true;
-
-        //Go to Ice.
-        if (BlizzardIiPvE.CanUse(out act)) return true;
-        if (BlizzardIiiPvE.CanUse(out act)) return true;
-        if (TransposePvE.CanUse(out act)) return true;
-        if (BlizzardPvE.CanUse(out act)) return true;
-        return false;
-    }
-
-    private bool MaintainIce(out IAction? act)
-    {
-        act = null;
-        if (UmbralIceStacks == 1)
+        if (!InAstralFire && !InUmbralIce)
         {
-            if (BlizzardIiPvE.CanUse(out act)) return true;
-
-            if (Player.Level == 90 && BlizzardPvE.CanUse(out act)) return true;
             if (BlizzardIiiPvE.CanUse(out act)) return true;
         }
-        if (UmbralIceStacks == 2 && Player.Level < 90)
+
+        if (HostileTarget != null && (!HostileTarget.HasStatus(true, StatusID.Thunder, StatusID.ThunderIi, StatusID.ThunderIii, StatusID.ThunderIv, StatusID.HighThunder_3872, StatusID.HighThunder) || HostileTarget.WillStatusEnd(3, true, StatusID.Thunder, StatusID.ThunderIi, StatusID.ThunderIii, StatusID.ThunderIv, StatusID.HighThunder_3872, StatusID.HighThunder)))
         {
-            if (BlizzardIiPvE.CanUse(out act)) return true;
-            if (BlizzardPvE.CanUse(out act)) return true;
-        }
-        return false;
-    }
-
-    private bool DoIce(out IAction? act)
-    {
-        act = null;
-
-        if (IsLastAction(ActionID.UmbralSoulPvE, ActionID.TransposePvE)
-            && IsParadoxActive && BlizzardPvE.CanUse(out act)) return true;
-
-        if (UmbralIceStacks == 3 && UsePolyglot(out act)) return true;
-
-        //Add Hearts
-        if (UmbralIceStacks == 3 &&
-            BlizzardIvPvE.EnoughLevel && UmbralHearts < 3 && !IsLastGCD
-            (ActionID.BlizzardIvPvE, ActionID.FreezePvE))
-        {
-            if (FreezePvE.CanUse(out act)) return true;
-            if (BlizzardIvPvE.CanUse(out act)) return true;
-        }
-
-        if (AddThunder(out act, 5)) return true;
-        if (UmbralIceStacks == 2 && UsePolyglot(out act, 0)) return true;
-
-        if (IsParadoxActive)
-        {
-            if (BlizzardPvE.CanUse(out act)) return true;
-        }
-
-            if (BlizzardIiPvE.CanUse(out act)) return true;
-            if (BlizzardIvPvE.CanUse(out act)) return true;
-            if (BlizzardPvE.CanUse(out act)) return true;
-        return false;
-    }
-
-    private bool GoFire(out IAction? act)
-    {
-        act = null;
-
-        //Transpose line
-        if (UmbralIceStacks < 3) return false;
-
-        //Need more MP
-
-        if (CurrentMp < 9600 && Player.CastActionId != 3576) return false;
-        
-
-        if (IsParadoxActive)
-        {
-            if (BlizzardPvE.CanUse(out act)) return true;
-        }
-
-        //Go to Fire.
-        if (FireIiPvE.CanUse(out act)) return true;
-        if (FireIiiPvE.CanUse(out act)) return true;
-        if (TransposePvE.CanUse(out act)) return true;
-        if (FirePvE.CanUse(out act)) return true;
-
-        return false;
-    }
-
-    private bool MaintainFire(out IAction? act)
-    {
-        act = null;
-        switch (AstralFireStacks)
-        {
-            case 1:
-                if (FireIiPvE.CanUse(out act)) return true;
-                if (UseN15)
-                {
-                    if (HasFire && FireIiiPvE.CanUse(out act)) return true;
-                    if (IsParadoxActive && FirePvE.CanUse(out act)) return true;
-                }
-                if (FireIiiPvE.CanUse(out act)) return true;
-                break;
-            case 2:
-                if (FireIiPvE.CanUse(out act)) return true;
-                if (FirePvE.CanUse(out act)) return true;
-                break;
-        }
-
-        if (ElementTimeEndAfterGCD(ExtendTimeSafely ? 3u : 2u))
-        {
-            if (CurrentMp >= FirePvE.Info.MPNeed * 2 + 800 && FirePvE.CanUse(out act)) return true;
-            if (FlarePvE.CanUse(out act)) return true;
-            if (DespairPvE.CanUse(out act)) return true;
-        }
-
-        return false;
-    }
-
-    private bool DoFire(out IAction? act)
-    {
-        act = null;
-        if (UsePolyglot(out act)) return true;
-
-        // Add thunder only at combat start.
-        if (CombatElapsedLess(5))
-        {
-            if (AddThunder(out act, 0)) return true;
-        }
-
-        if (TriplecastPvE.CanUse(out act)) return true;
-
-        if (AddThunder(out act, 0) && Player.WillStatusEndGCD(1, 0, true,
-            StatusID.Thundercloud)) return true;
-
-        if (UmbralHearts < 2 && FlarePvE.CanUse(out act)) return true;
-        if (FireIiPvE.CanUse(out act)) return true;
-
-        if (CurrentMp >= FirePvE.Info.MPNeed + 800)
-        {
-            if (FireIvPvE.EnoughLevel)
-            {
-                if (FireIvPvE.CanUse(out act)) return true;
-            }
-            else if (HasFire)
-            {
-                if (FireIiiPvE.CanUse(out act)) return true;
-            }
-            if (FirePvE.CanUse(out act)) return true;
-        }
-
-        if (DespairPvE.CanUse(out act)) return true;
-
-        return false;
-    }
-
-    private bool UseInstanceSpell(out IAction? act)
-    {
-        act = null;
-        if (UsePolyglot(out act)) return true;
-        if (HasThunder && AddThunder(out act, 1)) return true;
-        if (UsePolyglot(out act, 0)) return true;
-        return false;
-    }
-
-    private bool AddThunder(out IAction? act, uint gcdCount = 3)
-    {
-        act = null;
-
-        if (Player.HasStatus(true, (StatusID)3870))
-        {
-            //Return if just used.
-            if (IsLastGCD(ActionID.ThunderPvE, ActionID.ThunderIiPvE, ActionID.ThunderIiiPvE, ActionID.ThunderIvPvE)) return false;
-
-            //So long for thunder.
-            if (ThunderPvE.CanUse(out _) && (!ThunderPvE.Target.Target?.WillStatusEndGCD(gcdCount, 0, true,
-                StatusID.Thunder, StatusID.ThunderIi, StatusID.ThunderIii, StatusID.ThunderIv) ?? false))
-                return false;
-
             if (ThunderIiPvE.CanUse(out act)) return true;
             if (ThunderPvE.CanUse(out act)) return true;
         }
 
-        return false;
-    }
-
-    private bool AddElementBase(out IAction? act)
-    {
-        act = null;
-        if (CurrentMp >= 7200)
+        if (InUmbralIce && (UmbralIceStacks < 3 || UmbralHearts < 3) && NextGCDisInstant)
         {
-            if (FireIiPvE.CanUse(out act)) return true;
+            if (BlizzardIvPvE.CanUse(out act)) return true;
+        }
+
+        if (InUmbralIce && (UmbralIceStacks <3 || UmbralHearts < 3) && !NextGCDisInstant)
+        {
+            if (FixedUS.CanUse(out act)) return true;
+        }
+
+        if (InAstralFire && Player.HasStatus(true, StatusID.Firestarter))
+        {
             if (FireIiiPvE.CanUse(out act)) return true;
-            if (FirePvE.CanUse(out act)) return true;
         }
-        else
-        {
-            if (BlizzardIiPvE.CanUse(out act)) return true;
-            if (BlizzardIiiPvE.CanUse(out act)) return true;
-            if (BlizzardPvE.CanUse(out act)) return true;
-        }
-        return false;
+
+        return base.GeneralGCD(out act);
     }
 
-    private bool UsePolyglot(out IAction? act, uint gcdCount = 3)
-    {
-        act = null;
-
-        if (gcdCount == 0 || EnchinaEndAfterGCD(gcdCount))
-        {
-            if (FoulPvE.CanUse(out act)) return true;
-            if (XenoglossyPvE.CanUse(out act)) return true;
-        }
-        return false;
-    }
-
-    private bool MaintainStatus(out IAction? act)
-    {
-        act = null;
-        if (CombatElapsedLess(6)) return false;
-        if (UmbralSoulPvE.CanUse(out act)) return true;
-        if (InAstralFire && TransposePvE.CanUse(out act)) return true;
-        if (UseTransposeForParadox &&
-            InUmbralIce && !IsParadoxActive && UmbralIceStacks == 3
-            && TransposePvE.CanUse(out act)) return true;
-
-        return false;
-    }
+   
 
     [RotationDesc(ActionID.BetweenTheLinesPvE, ActionID.LeyLinesPvE)]
     protected override bool HealSingleAbility(IAction nextGCD, out IAction? act)
