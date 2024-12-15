@@ -84,9 +84,11 @@
     <ItemGroup>
       <Folder Include="Duty\" />
       <Folder Include="Job_Helpers\" />
+      <Folder Include="PVE\Healer\" />
       <Folder Include="PVE\Melee\" />
       <Folder Include="PVE\Ranged_Phys\" />
       <Folder Include="PVE\Tank\" />
+      <Folder Include="PVP\Healer\" />
       <Folder Include="PVP\Melee\" />
       <Folder Include="PVP\Ranged_Magic\" />
       <Folder Include="PVP\Tank\" />
