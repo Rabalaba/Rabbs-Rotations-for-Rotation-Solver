@@ -14,10 +14,10 @@ using System;
 
 namespace RabbsRotationsNET8.Magical;
 
-[Rotation("Boring BLM", CombatType.PvE, GameVersion = "7.11")]
-[SourceCode(Path = "main/DefaultRotations/Magical/BLM_Default.cs")]
+[Rotation("Boring InfininePowerdox", CombatType.PvE, GameVersion = "7.11")]
+[SourceCode(Path = "main/DefaultRotations/Magical/BLM_IP.cs")]
 [Api(4)]
-public class BLM_Default : BlackMageRotation
+public class BLM_IP : BlackMageRotation
 {
     #region Config Options
     public override MedicineType MedicineType => MedicineType.Intelligence;
@@ -51,6 +51,8 @@ public class BLM_Default : BlackMageRotation
     public IBaseAction FixedLL { get; } = new BaseAction((ActionID)3573);
 
     public IBaseAction FixedB3 { get; } = new BaseAction((ActionID)154);
+
+    public IBaseAction FixedHT { get; } = new BaseAction((ActionID)144);
 
 
     public IBaseItem Potion2 { get; } = new BaseItem(44165);
@@ -160,6 +162,11 @@ public class BLM_Default : BlackMageRotation
             {
                 if (AmplifierPvE.CanUse(out act)) return true;
             }
+            if (CanMakeInstant && InUmbralIce && !IsParadoxActive)
+            {
+                if (SwiftcastPvE.CanUse(out act)) return true;
+                if (TriplecastPvE.CanUse(out act, usedUp:true)) return true;
+            }
 
         }
 
@@ -177,46 +184,37 @@ public class BLM_Default : BlackMageRotation
 
     protected unsafe override bool GeneralGCD(out IAction? act)
     {
-        if (IsPolyglotStacksMaxed || Someone_is_bustin_a_nut)
+        if (IsPolyglotStacksMaxed || Someone_is_bustin_a_nut || Player.HasStatus(true, StatusID.LeyLines))
         {
-            if (FoulPvE.CanUse(out act)) return true;
-            if (XenoglossyPvE.CanUse(out act)) return true;
+            if (FoulPvE.CanUse(out act, usedUp:true)) return true;
+            if (XenoglossyPvE.CanUse(out act, usedUp: true)) return true;
         }
-        if (ThunderIiPvE.CanUse(out act)) return true;
-        if (ThunderPvE.CanUse(out act)) return true;
-        if (InUmbralIce && UmbralHearts == 3 && UmbralIceStacks == 3)
+        if (HostileTarget != null && (!HostileTarget.HasStatus(true, StatusID.Thunder, StatusID.ThunderIi, StatusID.ThunderIii, StatusID.ThunderIv, StatusID.HighThunder_3872, StatusID.HighThunder) || HostileTarget.StatusTime(true, StatusID.Thunder, StatusID.ThunderIi, StatusID.ThunderIii, StatusID.ThunderIv, StatusID.HighThunder_3872, StatusID.HighThunder) < 3) && Player.HasStatus(true, StatusID.Thunderhead))
         {
-            if (TransposePvE.CanUse(out act)) return true;
-        }
-        if (InAstralFire && CurrentMp == 0)
-        {
-            if (TransposePvE.CanUse(out act)) return true;
-        }
-        if (InAstralFire && CurrentMp < 2000 && AstralSoulStacks == 0)
-        {
-            if (FlarePvE.CanUse(out act)) return true;
-            if (DespairPvE.CanUse(out act)) return true;
+            ActionManager.Instance()->UseAction(ActionType.Action, 36986, HostileTarget.EntityId, 0, ActionManager.UseActionMode.Queue, 0, null);
         }
         if (ParadoxPvE.CanUse(out act)) return true;
+        if (NextGCDisInstant && InUmbralIce)
+        {
+            if (UmbralIceStacks < 3)
+            {
+                if (BlizzardIiiPvE.CanUse(out act)) return true;
+            }
+            if (UmbralHearts < 3)
+            {
+                if (BlizzardIvPvE.CanUse(out act)) return true;
+            }
+        }
         if (Player.HasStatus(true, StatusID.Firestarter))
         {
             if (FireIiiPvE.CanUse(out act)) return true;
         }
-        if (FlareStarPvE.CanUse(out act)) return true;
-        if (FireIiPvE.CanUse(out act)) return true;
-        if (FireIvPvE.CanUse(out act)) return true;
-        //if (FirePvE.CanUse(out act)) return true;
-        if (BlizzardIiPvE.CanUse(out act)) return true;
-        //if (BlizzardPvE.CanUse(out act)) return true;
-        if (UmbralIceStacks < 3)
+        if (DespairPvE.CanUse(out act)) return true;
+        if (AstralFireStacks == 3 || UmbralIceStacks == 3)
         {
-            if (BlizzardIiiPvE.CanUse(out act)) return true;
+            if (TransposePvE.CanUse(out act)) return true;
         }
-        if (UmbralHearts < 3)
-        {
-            if (BlizzardIvPvE.CanUse(out act)) return true;
-        }
-
+        if (UmbralSoulPvE.CanUse(out act)) return true;
         return base.GeneralGCD(out act);
     }
     public unsafe override void DisplayStatus()
