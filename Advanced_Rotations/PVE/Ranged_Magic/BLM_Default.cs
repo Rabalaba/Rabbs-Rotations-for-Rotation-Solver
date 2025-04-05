@@ -225,7 +225,6 @@ public class BLM_Default : BlackMageRotation
         ImGui.Text("insta " + ThisManyInstantCasts);
         ImGui.Text("InAstralFire " + InAstralFire);
         ImGui.Text("iAstralFireStacks " + AstralFireStacks);
-        ImGui.Text("elementtime " + ElementTime);
         ImGui.Text("even minute " + IsWithinFirst15SecondsOfEvenMinute());
         ImGui.Text("Combat Time " + CombatTime);
 

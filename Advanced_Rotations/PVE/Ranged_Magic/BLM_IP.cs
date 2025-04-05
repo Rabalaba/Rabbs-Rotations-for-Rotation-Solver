@@ -11,10 +11,12 @@ using Lumina.Excel.Sheets;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using System;
+using FFXIVClientStructs.FFXIV.Application.Network.WorkDefinitions;
+using static FFXIVClientStructs.FFXIV.Client.UI.Misc.DataCenterHelper;
 
 namespace RabbsRotationsNET8.Magical;
 
-[Rotation("Boring InfininePowerdox", CombatType.PvE, GameVersion = "7.11")]
+[Rotation("InfininePowerdox", CombatType.PvE, GameVersion = "7.11")]
 [SourceCode(Path = "main/DefaultRotations/Magical/BLM_IP.cs")]
 [Api(4)]
 public class BLM_IP : BlackMageRotation
@@ -53,6 +55,8 @@ public class BLM_IP : BlackMageRotation
     public IBaseAction FixedB3 { get; } = new BaseAction((ActionID)154);
 
     public IBaseAction FixedHT { get; } = new BaseAction((ActionID)144);
+
+
 
 
     public IBaseItem Potion2 { get; } = new BaseItem(44165);
@@ -191,6 +195,8 @@ public class BLM_IP : BlackMageRotation
         }
         if (HostileTarget != null && (!HostileTarget.HasStatus(true, StatusID.Thunder, StatusID.ThunderIi, StatusID.ThunderIii, StatusID.ThunderIv, StatusID.HighThunder_3872, StatusID.HighThunder) || HostileTarget.StatusTime(true, StatusID.Thunder, StatusID.ThunderIi, StatusID.ThunderIii, StatusID.ThunderIv, StatusID.HighThunder_3872, StatusID.HighThunder) < 3) && Player.HasStatus(true, StatusID.Thunderhead))
         {
+
+
             ActionManager.Instance()->UseAction(ActionType.Action, 36986, HostileTarget.EntityId, 0, ActionManager.UseActionMode.Queue, 0, null);
         }
         if (ParadoxPvE.CanUse(out act)) return true;
@@ -223,7 +229,6 @@ public class BLM_IP : BlackMageRotation
         ImGui.Text("insta " + ThisManyInstantCasts);
         ImGui.Text("InAstralFire " + InAstralFire);
         ImGui.Text("iAstralFireStacks " + AstralFireStacks);
-        ImGui.Text("elementtime " + ElementTime);
         ImGui.Text("even minute " + IsWithinFirst15SecondsOfEvenMinute());
         ImGui.Text("Combat Time " + CombatTime);
 
