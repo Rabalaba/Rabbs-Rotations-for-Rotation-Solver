@@ -3,7 +3,7 @@ using System.ComponentModel;
 
 namespace DefaultRotations.Magical;
 
-[Rotation("BobROss", CombatType.PvE, GameVersion = "7.05", Description = "Kindly created and donated by Rabbs and further update made by IcWa")]
+[Rotation("BobRoss by Rabbs", CombatType.PvE, GameVersion = "7.05", Description = "Kindly created and donated by Rabbs and further update made by IcWa")]
 [SourceCode(Path = "main/BasicRotations/Magical/ICWA_PCT_BETA.cs")]
 [Api(4)]
 public sealed class BobRoss : PictomancerRotation

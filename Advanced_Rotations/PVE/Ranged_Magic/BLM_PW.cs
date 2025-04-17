@@ -1,4 +1,10 @@
-﻿namespace RabbsRotationsNET8.Magical;
+﻿using Dalamud.Utility.Signatures;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Gauge;
+using RotationSolver.Basic.Rotations.Basic;
+using static FFXIVClientStructs.FFXIV.Client.UI.Misc.DataCenterHelper;
+
+namespace RabbsRotationsNET8.Magical;
 [Rotation("Rabbs Reworked", CombatType.PvE, GameVersion = "7.2")]
 [SourceCode(Path = "main/BasicRotations/Magical/BLM_Beta.cs")]
 [Api(4)]
@@ -6,23 +12,103 @@
 public sealed class BLM_Beta : BlackMageRotation
 {
     #region Config Options
-    [RotationConfig(CombatType.PvE, Name = "Use Infinite Paradox Rotation when at level 100)")]
+    [RotationConfig(CombatType.PvE, Name = "Use Infinite Paradox Rotation when at level 100")]
     public bool Infinity { get; set; } = false;
 
-    [RotationConfig(CombatType.PvE, Name = "(Standard Rotation) Use Leylines in combat when standing still")]
+    [RotationConfig(CombatType.PvE, Name = "Use Leylines in combat when standing still")]
     public bool LeylineMadness { get; set; } = false;
 
-    [RotationConfig(CombatType.PvE, Name = "(Standard Rotation) Use both stacks of Leylines automatically")]
+    [RotationConfig(CombatType.PvE, Name = "Use both stacks of Leylines automatically")]
     public bool Leyline2Madness { get; set; } = false;
 
-    [RotationConfig(CombatType.PvE, Name = "(Standard Rotation) Use Retrace when out of Leylines in combat and standing still")]
+    [RotationConfig(CombatType.PvE, Name = "Use Retrace when out of Leylines in combat and standing still")]
     public bool UseRetrace { get; set; } = false;
 
-    [RotationConfig(CombatType.PvE, Name = "(Infinite Paradox Rotation) Use Gemdraught/Tincture/pot")]
+    [RotationConfig(CombatType.PvE, Name = "Use Gemdraught/Tincture/pot")]
     public bool UseMedicine { get; set; } = false;
     #endregion
-    public bool NextGCDisInstant => Player.HasStatus(true, StatusID.Triplecast, StatusID.Swiftcast);
-    public int ThisManyInstantCasts => (TriplecastPvE.Cooldown.CurrentCharges *3)  + Player.StatusStack(true, StatusID.Triplecast) + SwiftcastPvE.Cooldown.CurrentCharges;
+
+    
+
+
+    public bool TargetHasThunderDebuff => HostileTarget is not null && HostileTarget.HasStatus(true, StatusID.Thunder, StatusID.ThunderIi, StatusID.ThunderIii, StatusID.ThunderIv, StatusID.HighThunder_3872, StatusID.HighThunder);
+
+    public bool ThunderBuffAboutToFallOff => HostileTarget is not null && TargetHasThunderDebuff && HostileTarget.StatusTime(true, StatusID.Thunder, StatusID.ThunderIi, StatusID.ThunderIii, StatusID.ThunderIv, StatusID.HighThunder_3872, StatusID.HighThunder) < 3;
+
+    public bool ShouldThunder => Player.HasStatus(true, StatusID.Thunderhead) && (!TargetHasThunderDebuff || ThunderBuffAboutToFallOff);
+
+    public static bool CanCastParadoxBeforeFire4()
+        {
+            int remainingStacks = 6 - AstralSoulStacks;
+            int costOfRemainingFire4 = 0;
+            byte currentUmbralHearts = UmbralHearts;
+
+            // Calculate the cost of the remaining Fire4 casts
+            for (int i = 0; i < remainingStacks; i++)
+            {
+                if (currentUmbralHearts > 0)
+                {
+                    costOfRemainingFire4 += 800;
+                    currentUmbralHearts--;
+                }
+                else
+                {
+                    costOfRemainingFire4 += 1600;
+                }
+            }
+
+            // Check if casting Paradox would leave enough MP for the remaining Fire4s and Flare Star
+            if (IsParadoxActive)
+            {
+                return CurrentMp >= (1600 + costOfRemainingFire4);
+            }
+            else
+            {
+                // If Paradox isn't active, we don't need to check its cost
+                return false;
+            }
+        }
+
+    public const int ParadoxCost = 1600;
+    public const int Fire4BaseCost = 1600;
+    public const int Fire4UmbralHeartCost = 800;
+
+    public bool WillHaveEnoughMpForFlareStar()
+    {
+        int remainingStacks = 6 - AstralSoulStacks;
+        int costOfFire4Sequence = 0;
+        byte currentUmbralHearts = UmbralHearts;
+
+
+        if (ThisManyInstantCasts + AstralSoulStacks <= 6)
+        {
+            return false;
+        }
+
+        // Calculate the cost of the remaining Fire4 casts
+        for (int i = 0; i < remainingStacks; i++)
+        {
+            if (currentUmbralHearts > 0)
+            {
+                costOfFire4Sequence += Fire4UmbralHeartCost;
+                currentUmbralHearts--; // Simulate the reduction of Umbral Hearts
+            }
+            else
+            {
+                costOfFire4Sequence += Fire4BaseCost;
+            }
+        }
+
+        int totalCost = costOfFire4Sequence;
+
+        if (IsParadoxActive)
+        {
+            totalCost += ParadoxCost;
+        }
+
+        return CurrentMp >= totalCost;
+    }
+
 
     protected override IAction? CountDownAction(float remainTime)
     {
@@ -48,7 +134,7 @@ public sealed class BLM_Beta : BlackMageRotation
             }
             if (nextGCD.IsTheSameTo(false, FireIiiPvE) && HasFire)
             {
-                if (TransposePvE.CanUse(out act)) return true;
+                //if (TransposePvE.CanUse(out act)) return true;
             }
 
             //Using Manafont
@@ -101,9 +187,10 @@ public sealed class BLM_Beta : BlackMageRotation
         if (!Infinity)
         {
             if (InCombat && IsMoving && HasHostilesInRange && TriplecastPvE.CanUse(out act, usedUp: true)) return true;
-            if (LeylineMadness && InCombat && HasHostilesInRange && LeyLinesPvE.CanUse(out act, usedUp: Leyline2Madness)) return true;
-            if (!IsLastAbility(ActionID.LeyLinesPvE) && UseRetrace && InCombat && HasHostilesInRange && RetracePvE.CanUse(out act)) return true;
+            
         }
+        if (LeylineMadness && InCombat && !Player.HasStatus(true, StatusID.LeyLines) && HasHostilesInRange && LeyLinesPvE.CanUse(out act, usedUp: Leyline2Madness)) return true;
+        if (!IsLastAbility(ActionID.LeyLinesPvE) && UseRetrace && !Player.HasStatus(true, StatusID.CircleOfPower) && InCombat && HasHostilesInRange && RetracePvE.CanUse(out act)) return true;
 
         return base.GeneralAbility(nextGCD, out act);
     }
@@ -113,8 +200,16 @@ public sealed class BLM_Beta : BlackMageRotation
     {
         if (!Infinity)
         {
-            if (InUmbralIce)
+            if (InCombat)
             {
+                if (UseMedicine && UseBurstMedicine(out act)) return true;
+            }
+                if (InUmbralIce)
+            {
+                if (IsLastAction(true, TransposePvE) && nextGCD.IsTheSameTo(true, BlizzardIiiPvE))
+                {
+                    if (SwiftcastPvE.CanUse(out act)) return true;
+                }
                 if (UmbralIceStacks == 2 && !HasFire
                     && !IsLastGCD(ActionID.ParadoxPvE))
                 {
@@ -133,9 +228,9 @@ public sealed class BLM_Beta : BlackMageRotation
             if (AmplifierPvE.CanUse(out act)) return true;
         }
 
-        if (FlareStarPvE.EnoughLevel && Infinity)
+        if (Infinity)
         {
-            if (UseMedicine && UseBurstMedicine(out act)) return true;
+            
 
             //if (ElementTime > 0 && ElementTimeEndAfter(1))
             //{
@@ -144,26 +239,17 @@ public sealed class BLM_Beta : BlackMageRotation
 
             if (InCombat)
             {
-                if (ThisManyInstantCasts > 6 && AstralSoulStacks < 6 && InAstralFire && Player.HasStatus(true, StatusID.Firestarter))
+                if (UseMedicine && UseBurstMedicine(out act)) return true;
+                if (InUmbralIce && (UmbralHearts < 3 || UmbralIceStacks <3 ))
                 {
-                    if (ManafontPvE.CanUse(out act)) return true;
-                }
-                if (ThisManyInstantCasts > 6 && AstralSoulStacks < 6 && InAstralFire && Player.HasStatus(true, StatusID.Firestarter) && Player.CurrentMp > 9000)
-                {
-                    if (InCombat && TriplecastPvE.CanUse(out act)) return true;
-                }
-
-                if (ThisManyInstantCasts > 3 && AstralSoulStacks == 3 && InAstralFire)
-                {
-                    if (InCombat && TriplecastPvE.CanUse(out act, usedUp: true)) return true;
+                    if (!NextGCDisInstant)
+                    {
+                        if (TriplecastPvE.CanUse(out act, usedUp:true)) return true;
+                        if (SwiftcastPvE.CanUse(out act, usedUp: true)) return true;
+                    }
                 }
 
-                if (ThisManyInstantCasts == 1 && AstralSoulStacks == 6 && InAstralFire)
-                {
-                    if (SwiftcastPvE.CanUse(out act)) return true;
-                }
-
-                if (LeyLinesPvE.CanUse(out act)) return true;
+                //if (LeyLinesPvE.CanUse(out act)) return true;
 
                 if (!IsPolyglotStacksMaxed)
                 {
@@ -188,11 +274,11 @@ public sealed class BLM_Beta : BlackMageRotation
             if (mustGo) return false;
 
             if (AddElementBase(out act)) return true;
-            if (ScathePvE.CanUse(out act)) return true;
+            //if (ScathePvE.CanUse(out act)) return true;
             if (MaintainStatus(out act)) return true;
         }
 
-        if (FlareStarPvE.EnoughLevel && Infinity)
+        if (Infinity)
         {
 
             if (InAstralFire && Player.HasStatus(true, StatusID.Firestarter))
@@ -202,15 +288,26 @@ public sealed class BLM_Beta : BlackMageRotation
 
             if (NextGCDisInstant)
             {
-                if (AstralSoulStacks == 6)
+                if (InAstralFire)
                 {
-                    if (FlareStarPvE.CanUse(out act)) return true;
+
+                    if (FireIvPvE.CanUse(out act)) return true;
                 }
-                if (FireIvPvE.CanUse(out act)) return true;
+                if (InUmbralIce)
+                {
+                    if (UmbralIceStacks < 3)
+                    {
+                        if (BlizzardIiiPvE.CanUse(out act)) return true;
+                    }
+
+                    if (BlizzardIvPvE.CanUse(out act)) return true;
+
+                }
             }
 
-            if (HostileTarget != null && (!HostileTarget.HasStatus(true, StatusID.Thunder, StatusID.ThunderIi, StatusID.ThunderIii, StatusID.ThunderIv, StatusID.HighThunder_3872, StatusID.HighThunder) || HostileTarget.StatusTime(true, StatusID.Thunder, StatusID.ThunderIi, StatusID.ThunderIii, StatusID.ThunderIv, StatusID.HighThunder_3872, StatusID.HighThunder) < 3))
+            if (ShouldThunder)
             {
+                if (ThunderIiPvE.CanUse(out act)) return true;
                 if (ThunderPvE.CanUse(out act)) return true;
             }
 
@@ -223,6 +320,7 @@ public sealed class BLM_Beta : BlackMageRotation
             if (IsParadoxActive)
             {
                 if (ParadoxPvE.CanUse(out act)) return true;
+                
             }
 
             if (InCombat && UmbralIceStacks == 3 && UmbralHearts == 3 && InUmbralIce)
@@ -237,10 +335,6 @@ public sealed class BLM_Beta : BlackMageRotation
 
             if (InAstralFire)
             {
-                if (Player.HasStatus(true, StatusID.Firestarter))
-                {
-                    if (FireIiiPvE.CanUse(out act)) return true;
-                }
                 if (CurrentMp >= 800)
                 {
                     if (DespairPvE.CanUse(out act)) return true;
@@ -261,6 +355,8 @@ public sealed class BLM_Beta : BlackMageRotation
             }
 
             if (BlizzardIiiPvE.CanUse(out act)) return true;
+            if (FireIiiPvE.CanUse(out act)) return true;
+            if (ScathePvE.CanUse(out act)) return true;
         }
 
         return base.GeneralGCD(out act);
@@ -343,7 +439,11 @@ public sealed class BLM_Beta : BlackMageRotation
             if (BlizzardIvPvE.CanUse(out act)) return true;
         }
 
-        if (AddThunder(out act, 5)) return true;
+        if (ShouldThunder)
+        {
+            if (ThunderIiPvE.CanUse(out act)) return true;
+            if (ThunderPvE.CanUse(out act)) return true;
+        }
         if (UmbralIceStacks == 2 && UsePolyglot(out act, 0)) return true;
 
         if (IsParadoxActive)
@@ -375,7 +475,7 @@ public sealed class BLM_Beta : BlackMageRotation
         //Go to Fire.
         if (FireIiPvE.CanUse(out act)) return true;
         if (FireIiiPvE.CanUse(out act)) return true;
-        if (TransposePvE.CanUse(out act)) return true;
+        //if (TransposePvE.CanUse(out act)) return true;
         if (FirePvE.CanUse(out act)) return true;
 
         return false;
@@ -411,22 +511,25 @@ public sealed class BLM_Beta : BlackMageRotation
         act = null;
         if (UsePolyglot(out act)) return true;
 
-        // Add thunder only at combat start.
-        if (CombatElapsedLess(5))
-        {
-            if (AddThunder(out act, 0)) return true;
-        }
-
         if (InCombat && TriplecastPvE.CanUse(out act)) return true;
 
-        if (AddThunder(out act, 0) && Player.WillStatusEndGCD(1, 0, true,
-            StatusID.Thundercloud)) return true;
+        if (ShouldThunder)
+        {
+            if (ThunderIiPvE.CanUse(out act)) return true;
+            if (ThunderPvE.CanUse(out act)) return true;
+        }
 
         if (UmbralHearts < 2 && FlarePvE.CanUse(out act)) return true;
         if (FireIiPvE.CanUse(out act)) return true;
-
         if (CurrentMp >= FirePvE.Info.MPNeed + 800)
         {
+            if (ParadoxPvE.EnoughLevel)
+            {
+                if (CanCastParadoxBeforeFire4() && IsParadoxActive)
+                {
+                    if (ParadoxPvE.CanUse(out act)) return true;
+                }
+            }
             if (FireIvPvE.EnoughLevel)
             {
                 if (FireIvPvE.CanUse(out act)) return true;
@@ -437,10 +540,12 @@ public sealed class BLM_Beta : BlackMageRotation
             }
             if (FirePvE.CanUse(out act)) return true;
         }
-        if (CurrentMp < 2000)
+        if (CurrentMp > 800 && (CurrentMp < 2000) || (!IsParadoxActive && !HasFire))
         {
             if (DespairPvE.CanUse(out act)) return true;
         }
+
+        
 
         return false;
     }
@@ -449,25 +554,12 @@ public sealed class BLM_Beta : BlackMageRotation
     {
         act = null;
         if (UsePolyglot(out act)) return true;
-        if (HasThunder && AddThunder(out act, 1)) return true;
+        if (ShouldThunder)
+        {
+            if (ThunderIiPvE.CanUse(out act)) return true;
+            if (ThunderPvE.CanUse(out act)) return true;
+        }
         if (UsePolyglot(out act, 0)) return true;
-        return false;
-    }
-
-    private bool AddThunder(out IAction? act, uint gcdCount = 3)
-    {
-        act = null;
-        //Return if just used.
-        if (IsLastGCD(ActionID.ThunderPvE, ActionID.ThunderIiPvE, ActionID.ThunderIiiPvE, ActionID.ThunderIvPvE)) return false;
-
-        //So long for thunder.
-        if (ThunderPvE.CanUse(out _) && (!ThunderPvE.Target.Target?.WillStatusEndGCD(gcdCount, 0, true,
-            StatusID.Thunder, StatusID.ThunderIi, StatusID.ThunderIii, StatusID.ThunderIv, StatusID.HighThunder_3872) ?? false))
-            return false;
-
-        if (ThunderIiPvE.CanUse(out act)) return true;
-        if (ThunderPvE.CanUse(out act)) return true;
-
         return false;
     }
 
@@ -506,7 +598,18 @@ public sealed class BLM_Beta : BlackMageRotation
         act = null;
         if (CombatElapsedLess(6)) return false;
         if (UmbralSoulPvE.CanUse(out act)) return true;
-        if (InAstralFire && TransposePvE.CanUse(out act)) return true;
+        if (InAstralFire)
+        {
+            if (CanCastParadoxBeforeFire4() && IsParadoxActive)
+            {
+                if (ParadoxPvE.CanUse(out act)) return true;
+            }
+            if (HasFire)
+            {
+                if (FireIiiPvE.CanUse(out act)) return true;
+            }
+        }
+        //if (InAstralFire && TransposePvE.CanUse(out act)) return true;
 
         return false;
     }
@@ -539,4 +642,19 @@ public sealed class BLM_Beta : BlackMageRotation
     }
 
     #endregion
+    public unsafe override void DisplayStatus()
+    {
+        //motif
+        ImGui.Text("insta " + ThisManyInstantCasts);
+        ImGui.Text("InAstralFire " + InAstralFire);
+        ImGui.Text("iAstralFireStacks " + AstralFireStacks);
+        ImGui.Text("even minute " + IsWithinFirst15SecondsOfEvenMinute());
+        ImGui.Text("Combat Time " + CombatTime);
+        ImGui.Text("WillHaveEnoughMpForFS " + WillHaveEnoughMpForFlareStar());
+        ImGui.Text("PartyBurst " + PartyBurst);
+        ImGui.Text("RealAstralDefecit " + (ThisManyInstantCasts + AstralSoulStacks));
+        ImGui.Text("WeaponRemain " + (WeaponRemain));
+
+        base.DisplayStatus();
+    }
 }
