@@ -95,7 +95,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="RotationSolverReborn.Basic" Version="7.2.0.21" />
+      <PackageReference Include="RotationSolverReborn.Basic" Version="*-*" />
     </ItemGroup>
 
 </Project>
