@@ -12,6 +12,7 @@ using System.Linq;
 using static DefaultRotations.Magical.BobRoss;
 using static FFXIVClientStructs.FFXIV.Client.UI.Misc.DataCenterHelper;
 
+
 namespace RabbsRotationsNET8.Magical;
 [Rotation("Rabbs Blackest Mage for Level 100 Mages only", CombatType.PvE, GameVersion = "7.2")]
 [SourceCode(Path = "main/BasicRotations/Magical/BLM_Beta.cs")]
@@ -146,6 +147,49 @@ public sealed class BLM_Gamma : BlackMageRotation
             return false; // If we can afford all the needed Flare casts
         }
     }
+
+    //public static IBaseAction RainbowPrePull { get; } = new BaseAction((ActionID)34688);
+
+    public IBaseAction FreezePvE2 => _FreezePvECreator2.Value;
+
+    private static void ModifyFreezePvE(ref ActionSetting setting)
+    {
+        //setting.ActionCheck = () => InUmbralIce && UmbralHearts == 0;
+        setting.RotationCheck = () => InUmbralIce;
+        setting.UnlockedByQuestID = 66611u;
+        
+        //setting.CreateConfig = () => new ActionConfig
+
+    }
+
+    private readonly Lazy<IBaseAction> _FreezePvECreator2 = new Lazy<IBaseAction>(delegate
+    {
+        IBaseAction action460 = new BaseAction(ActionID.FreezePvE);
+        ActionSetting setting460 = action460.Setting;
+        ModifyFreezePvE(ref setting460);
+        action460.Setting = setting460;
+        return action460;
+    });
+
+    public IBaseAction TransposePvE2 => _TransposePvE2.Value;
+
+    private static void ModifyTransposePvE2(ref ActionSetting setting)
+    {
+        setting.RotationCheck = () => InUmbralIce || InAstralFire;
+
+        //setting.CreateConfig = () => new ActionConfig
+
+    }
+
+    private readonly Lazy<IBaseAction> _TransposePvE2 = new Lazy<IBaseAction>(delegate
+    {
+        IBaseAction action461 = new BaseAction(ActionID.TransposePvE);
+        ActionSetting setting461 = action461.Setting;
+        ModifyTransposePvE2(ref setting461);
+        action461.Setting = setting461;
+        return action461;
+    });
+
     #endregion
 
     #region Countdown
@@ -177,6 +221,7 @@ public sealed class BLM_Gamma : BlackMageRotation
     protected override bool EmergencyAbility(IAction nextGCD, out IAction? act)
     {
 
+        
         return base.EmergencyAbility(nextGCD, out act);
     }
 
@@ -215,6 +260,8 @@ public sealed class BLM_Gamma : BlackMageRotation
     [RotationDesc(ActionID.TransposePvE, ActionID.LeyLinesPvE, ActionID.RetracePvE)]
     protected override bool GeneralAbility(IAction nextGCD, out IAction? act)
     {
+
+
         #region Opener
         if (Useopener && CombatTime < 30 && InCombat && !Player.HasStatus(true, StatusID.BrinkOfDeath, StatusID.Weakness))
         {
@@ -223,6 +270,7 @@ public sealed class BLM_Gamma : BlackMageRotation
                 if (LeyLinesPvE.CanUse(out act)) return true;
             }
         }
+        
         #endregion
         if (LeylineMadness && InCombat && HasHostilesInRange && LeyLinesPvE.CanUse(out act, usedUp: Leyline2Madness)) return true;
         if (!IsLastAbility(ActionID.LeyLinesPvE) && UseRetrace && InCombat && HasHostilesInRange && !Player.HasStatus(true, StatusID.CircleOfPower) && RetracePvE.CanUse(out act)) return true;
@@ -233,17 +281,11 @@ public sealed class BLM_Gamma : BlackMageRotation
     [RotationDesc(ActionID.RetracePvE, ActionID.SwiftcastPvE, ActionID.TriplecastPvE, ActionID.AmplifierPvE)]
     protected override bool AttackAbility(IAction nextGCD, out IAction? act)
     {
+
         if (InCombat && HasHostilesInRange)
         {
             if (InUmbralIce)
             {
-
-                    if (IsLastAction(ActionID.FreezePvE))
-                    {
-                        if (TransposePvE.CanUse(out act)) return true;
-                    }
-                
-
                 if (IsLastAction(ActionID.TransposePvE))
                 {
                     if (CanMakeInstant)
@@ -304,6 +346,14 @@ public sealed class BLM_Gamma : BlackMageRotation
     {
         var isTargetBoss = CurrentTarget?.IsBossFromTTK() ?? false;
         var isTargetDying = CurrentTarget?.IsDying() ?? false;
+        var recentActions = RecordActions.Take(4);
+        if (TransposePvE.CanUse(out act) && UmbralHearts == 3 && InUmbralIce && (!IsParadoxActive || IsLastAction(ActionID.FoulPvE, ActionID.HighThunderIiPvE))) return true;
+        if (IsLastAction(ActionID.FreezePvE))
+        {
+            if (FoulPvE.CanUse(out act)) return true;
+            if (ThunderIiPvE.CanUse(out act)) return true;
+        }
+        
         if (IsPolyglotStacksMaxed)
         {
             if (FoulPvE.CanUse(out act)) return true;
@@ -316,7 +366,7 @@ public sealed class BLM_Gamma : BlackMageRotation
                 if (SwiftcastPvE.CanUse(out act)) return true;
                 if (TriplecastPvE.CanUse(out act, usedUp: true)) return true;
             }
-            if (BlizzardIiiPvE.CanUse(out act)) return true;
+            if (FireIiiPvE.CanUse(out act)) return true;
         }
         if (ThunderIiPvE.CanUse(out act) && ShouldThunder) return true;
         if (ThunderPvE.CanUse(out act) && ShouldThunder) return true;
@@ -325,13 +375,13 @@ public sealed class BLM_Gamma : BlackMageRotation
             if (FoulPvE.CanUse(out act)) return true;
             if (XenoglossyPvE.CanUse(out act)) return true;
         }
-        if (InUmbralIce)
+        if (FreezePvE2.CanUse(out act) && UmbralHearts < 3) return true;
+        if (FlareStarPvE.CanUse(out act)) return true;
+        if (FlarePvE.CanUse(out act)) return true;
+        if (InUmbralIce && !recentActions.Any(x => x.Action.RowId == FreezePvE.ID))
         {
-            if (IsLastAction(ActionID.FreezePvE))
-            {
-                if (TransposePvE.CanUse(out act)) return true;
-            }
-            if (InCombat && GetTimeSinceNoHostilesInCombat() > 5f)
+            
+            if ((InCombat && GetTimeSinceNoHostilesInCombat() > 5f) || !InCombat)
             {
                 if (UmbralIceStacks < 3 || UmbralHearts < 3)
                 {
@@ -365,7 +415,7 @@ public sealed class BLM_Gamma : BlackMageRotation
         if (InAstralFire)
         {
             //if (FlarePvE.CanUse(out act, skipAoeCheck:true)) return true; how to use flare escape
-            if (InCombat && GetTimeSinceNoHostilesInCombat() > 5f)
+            if ((InCombat && GetTimeSinceNoHostilesInCombat() > 5f) || !InCombat)
             {
                 if (TransposePvE.CanUse(out act)) return true;
             }
@@ -465,7 +515,8 @@ public sealed class BLM_Gamma : BlackMageRotation
             }
 
         }
-
+        //fallback if here something is messed up
+        if (TransposePvE.CanUse(out act) && InCombat) return true;
 
         return base.GeneralGCD(out act);
     }
@@ -480,7 +531,7 @@ public sealed class BLM_Gamma : BlackMageRotation
         //motif
         ImGui.Text("WillBeAbleToFlareStarMT " + WillBeAbleToFlareStarMT);
         ImGui.Text("WillBeAbleToFlareStarST " + WillBeAbleToFlareStarST);
-        ImGui.Text("EnochianTime " + EnochianTime);
+        ImGui.Text("soulstack " + SoulStackCount);
         ImGui.Text("even minute " + IsWithinFirst15SecondsOfEvenMinute());
         ImGui.Text("Combat Time " + CombatTime);
         ImGui.Text("CombatNoEnemiesTimer " + GetTimeSinceNoHostilesInCombat());
