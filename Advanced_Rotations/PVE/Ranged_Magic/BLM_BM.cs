@@ -171,25 +171,38 @@ public sealed class BLM_Gamma : BlackMageRotation
         return action460;
     });
 
-    public IBaseAction TransposePvE2 => _TransposePvE2.Value;
-
-    private static void ModifyTransposePvE2(ref ActionSetting setting)
+    public bool shouldTranspose
     {
-        setting.RotationCheck = () => InUmbralIce || InAstralFire;
+        get
+        {
+            var recentActions = RecordActions.Take(2);
+            if (InUmbralIce && recentActions.Any(x => x.Action.RowId == FreezePvE.ID))
+            {
+                return true;
+            }
+            if (GetTimeSinceNoHostilesInCombat() > 5f) //we are in combat but nothing to attack for 5 seconds
+            {
+                if (!IsParadoxActive)
+                    { return true; }
+                if (!HasThunder)
+                { return true; }
+            }
+            if (InAstralFire)
+            {
+                if (!FlarePvE.CanUse(out _) && !DespairPvE.CanUse(out _) && !FlareStarPvE.CanUse(out _) && !FireIvPvE.CanUse(out _) && !IsParadoxActive && ManafontPvE.Cooldown.IsCoolingDown)
+                {
+                    return true;
+                }
+            }
+            if (InUmbralIce)
+            {
+                if (UmbralHearts == 3 && UmbralIceStacks == 3 && !IsParadoxActive)
+                    { return true; }
+            }
 
-        //setting.CreateConfig = () => new ActionConfig
-
+            return false;
+        }
     }
-
-    private readonly Lazy<IBaseAction> _TransposePvE2 = new Lazy<IBaseAction>(delegate
-    {
-        IBaseAction action461 = new BaseAction(ActionID.TransposePvE);
-        ActionSetting setting461 = action461.Setting;
-        ModifyTransposePvE2(ref setting461);
-        action461.Setting = setting461;
-        return action461;
-    });
-
     #endregion
 
     #region Countdown
@@ -220,8 +233,15 @@ public sealed class BLM_Gamma : BlackMageRotation
     [RotationDesc]
     protected override bool EmergencyAbility(IAction nextGCD, out IAction? act)
     {
+        if (shouldTranspose)
+        {
+            if (TransposePvE.CanUse(out act, skipCastingCheck:true, skipComboCheck:true, skipAoeCheck:true, skipStatusProvideCheck:true, skipTargetStatusNeedCheck:true, skipTTKCheck:true, usedUp:true)) return true;
+        }
+        if (!ManafontPvE.Cooldown.IsCoolingDown && CurrentMp < 800 && AstralSoulStacks < 6 && InAstralFire)
+        {
+            if (ManafontPvE.CanUse(out act, skipCastingCheck: true, skipComboCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true, skipTargetStatusNeedCheck: true, skipTTKCheck: true, usedUp: true)) return true;
+        }
 
-        
         return base.EmergencyAbility(nextGCD, out act);
     }
 
@@ -294,10 +314,6 @@ public sealed class BLM_Gamma : BlackMageRotation
                         if (TriplecastPvE.CanUse(out act, usedUp: true)) return true;
                     }
                 }
-                if (UmbralHearts == 3 && UmbralIceStacks == 3 && !ParadoxPvEReady && (CurrentMp == 10000 || IsLastAction(ActionID.BlizzardIvPvE)))
-                {
-                    if (TransposePvE.CanUse(out act)) return true;
-                }
             }
             if (InAstralFire)
             {
@@ -316,14 +332,7 @@ public sealed class BLM_Gamma : BlackMageRotation
 
                 }
                 #endregion
-                if (ManafontPvE.Cooldown.IsCoolingDown && CurrentMp < 800 && AstralSoulStacks < 6)
-                {
-                    if (TransposePvE.CanUse(out act)) return true;
-                }
-                if (!ManafontPvE.Cooldown.IsCoolingDown && CurrentMp < 800 && AstralSoulStacks < 6)
-                {
-                    if (ManafontPvE.CanUse(out act)) return true;
-                }
+                
             }
             if (CombatTime > 30 || !Useopener)
             {
@@ -347,7 +356,6 @@ public sealed class BLM_Gamma : BlackMageRotation
         var isTargetBoss = CurrentTarget?.IsBossFromTTK() ?? false;
         var isTargetDying = CurrentTarget?.IsDying() ?? false;
         var recentActions = RecordActions.Take(4);
-        if (TransposePvE.CanUse(out act) && UmbralHearts == 3 && InUmbralIce && (!IsParadoxActive || IsLastAction(ActionID.FoulPvE, ActionID.HighThunderIiPvE))) return true;
         if (IsLastAction(ActionID.FreezePvE))
         {
             if (FoulPvE.CanUse(out act)) return true;
@@ -377,24 +385,16 @@ public sealed class BLM_Gamma : BlackMageRotation
         }
         if (FreezePvE2.CanUse(out act) && UmbralHearts < 3) return true;
         if (FlareStarPvE.CanUse(out act)) return true;
-        if (FlarePvE.CanUse(out act)) return true;
+        if (FlarePvE.CanUse(out act) && AstralSoulStacks > 3 && CurrentMp > 1200) return true;
         if (InUmbralIce && !recentActions.Any(x => x.Action.RowId == FreezePvE.ID))
         {
             
-            if ((InCombat && GetTimeSinceNoHostilesInCombat() > 5f) || !InCombat)
+            if ((InCombat && GetTimeSinceNoHostilesInCombat() > 5f) || (!InCombat && TimeSinceLastAction.TotalSeconds > 4.5))
             {
                 if (UmbralIceStacks < 3 || UmbralHearts < 3)
                 {
                     if (UmbralSoulPvE.CanUse(out act)) return true;
-                }
-                if (!Player.HasStatus(true, StatusID.Thunderhead) || !ParadoxPvEReady)
-                {
-
-                    if (UmbralIceStacks == 3 && UmbralIceStacks == 3)
-                    {
-                        if (TransposePvE.CanUse(out act)) return true;
-                    }
-                }    
+                }   
             }
             if (FreezePvE.CanUse(out act)) return true;
 
@@ -414,8 +414,7 @@ public sealed class BLM_Gamma : BlackMageRotation
         }
         if (InAstralFire)
         {
-            //if (FlarePvE.CanUse(out act, skipAoeCheck:true)) return true; how to use flare escape
-            if ((InCombat && GetTimeSinceNoHostilesInCombat() > 5f) || !InCombat)
+            if ((InCombat && GetTimeSinceNoHostilesInCombat() > 5f) || (!InCombat && TimeSinceLastAction.TotalSeconds > 4.5))
             {
                 if (TransposePvE.CanUse(out act)) return true;
             }
@@ -460,7 +459,36 @@ public sealed class BLM_Gamma : BlackMageRotation
                 if (WillBeAbleToFlareStarMT || WillBeAbleToFlareStarST)
                 {
                     if (FlareStarPvE.CanUse(out act)) return true;
-                    if (FlarePvE.CanUse(out act)) return true;
+                    if (FlarePvE.CanUse(out var flareAction))
+                    {
+                        if (WillBeAbleToFlareStarST && !WillBeAbleToFlareStarMT)
+                        {
+                            uint flareCost = FlarePvE.Info.MPNeed;
+                            uint remainingMpAfterFlare = CurrentMp - flareCost;
+
+                            const int baseFireFourCost = 1600;
+                            const int fireFourCostWithHeart = 800;
+                            int soulDeficitAfterFlare = 6 - (AstralSoulStacks + 3);
+                            int discountedCastsAfterFlare = Math.Min(soulDeficitAfterFlare, UmbralHearts);
+                            int normalCastsAfterFlare = soulDeficitAfterFlare - discountedCastsAfterFlare;
+
+                            if (!ManafontPvE.Cooldown.IsCoolingDown || (AstralSoulStacks + 3) == 6 || (remainingMpAfterFlare > (discountedCastsAfterFlare * fireFourCostWithHeart) + (normalCastsAfterFlare * baseFireFourCost)))
+                            {
+                                act = flareAction;
+                                return true;
+                            }
+                            else
+                            {
+                                act = null;
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            act = flareAction;
+                            return true;
+                        }
+                    }
                     if (!WillBeAbleToFlareStarST)
                     {
                         if (FlarePvE.CanUse(out act, skipAoeCheck: true)) return true;
@@ -516,7 +544,6 @@ public sealed class BLM_Gamma : BlackMageRotation
 
         }
         //fallback if here something is messed up
-        if (TransposePvE.CanUse(out act) && InCombat) return true;
 
         return base.GeneralGCD(out act);
     }
@@ -535,7 +562,7 @@ public sealed class BLM_Gamma : BlackMageRotation
         ImGui.Text("even minute " + IsWithinFirst15SecondsOfEvenMinute());
         ImGui.Text("Combat Time " + CombatTime);
         ImGui.Text("CombatNoEnemiesTimer " + GetTimeSinceNoHostilesInCombat());
-        ImGui.Text("PartyBurst " + PartyBurst);
+        ImGui.Text("shouldTranspose " + shouldTranspose);
         ImGui.Text("RealAstralDefecit " + (ThisManyInstantCasts + AstralSoulStacks));
         ImGui.Text("Fire3 time " + FireIiiPvE.Info.CastTime);
 
