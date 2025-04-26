@@ -302,6 +302,8 @@ public sealed class BLM_Gamma : BlackMageRotation
 
     protected override bool GeneralGCD(out IAction? act)
     {
+        var isTargetBoss = CurrentTarget?.IsBossFromTTK() ?? false;
+        var isTargetDying = CurrentTarget?.IsDying() ?? false;
         if (IsPolyglotStacksMaxed)
         {
             if (FoulPvE.CanUse(out act)) return true;
@@ -318,8 +320,17 @@ public sealed class BLM_Gamma : BlackMageRotation
         }
         if (ThunderIiPvE.CanUse(out act) && ShouldThunder) return true;
         if (ThunderPvE.CanUse(out act) && ShouldThunder) return true;
+        if (isTargetBoss && isTargetDying)
+        {
+            if (FoulPvE.CanUse(out act)) return true;
+            if (XenoglossyPvE.CanUse(out act)) return true;
+        }
         if (InUmbralIce)
         {
+            if (IsLastAction(ActionID.FreezePvE))
+            {
+                if (TransposePvE.CanUse(out act)) return true;
+            }
             if (InCombat && GetTimeSinceNoHostilesInCombat() > 5f)
             {
                 if (UmbralIceStacks < 3 || UmbralHearts < 3)
@@ -394,7 +405,7 @@ public sealed class BLM_Gamma : BlackMageRotation
                 /// setting rotation for in combat and planted, moving will be set seperately
                 if (InCombat && (!IsMoving || NextGCDisInstant))
             {
-               
+                if (ParadoxPvE.CanUse(out act) && ManafontPvE.Cooldown.WillHaveOneChargeGCD(3)) return true;
 
                 if (WillBeAbleToFlareStarMT || WillBeAbleToFlareStarST)
                 {
@@ -406,9 +417,14 @@ public sealed class BLM_Gamma : BlackMageRotation
                     }
                     if (FireIvPvE.CanUse(out act)) return true;
                 }
-                if (ParadoxPvE.CanUse(out act)) return true;
-                if (DespairPvE.CanUse(out act)) return true;
-
+                if (IsParadoxActive)
+                {
+                    if (ParadoxPvE.CanUse(out act, skipStatusProvideCheck:true)) return true;
+                }
+                if (!IsParadoxActive || CurrentMp < 1600)
+                {
+                    if (DespairPvE.CanUse(out act)) return true;
+                }
             }
             if (InCombat && IsMoving && !NextGCDisInstant && HasHostilesInRange)
             {
