@@ -189,7 +189,7 @@ public sealed class BLM_Gamma : BlackMageRotation
             }
             if (InAstralFire)
             {
-                if (!FlarePvE.CanUse(out _) && !DespairPvE.CanUse(out _) && !FlareStarPvE.CanUse(out _) && !FireIvPvE.CanUse(out _) && !IsParadoxActive && ManafontPvE.Cooldown.IsCoolingDown)
+                if (!FlarePvE.CanUse(out _) && !DespairPvE.CanUse(out _) && !FlareStarPvE.CanUse(out _) && !FireIvPvE.CanUse(out _) && !ParadoxPvE.CanUse(out _) && ManafontPvE.Cooldown.IsCoolingDown)
                 {
                     return true;
                 }
