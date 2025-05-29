@@ -1,6 +1,10 @@
 ﻿using Jobgauge = FFXIVClientStructs.FFXIV.Client.Game.Gauge;
 using System.ComponentModel;
 using FFXIVClientStructs.FFXIV.Client.Game.Gauge;
+using FFXIVClientStructs.FFXIV.Client.Game.Group;
+using Dalamud.Game.ClientState.Party;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using RotationSolver.Basic.Actions;
 
 namespace RabbsRotationsNET8.Magical;
 
@@ -33,11 +37,23 @@ public sealed class SMN_Default : SummonerRotation
         actionx.Setting = settingx;
         return actionx;
     });
-
+    /*
+    private static ActionConfig GetActionConfig(ActionSetting setting)
+    {
+        var propertyInfo =
+            typeof(ActionSetting).GetProperty("CreateConfig", BindingFlags.CreateInstance | BindingFlags.NonPublic);
+        return propertyInfo == null || propertyInfo.GetValue(setting) is not Func<ActionConfig> createConfigDelegate
+            ? throw new Exception("Failed to get CreateConfig property")
+            : createConfigDelegate();
+    }
+    */
     public static void ModifySummonTitan(ref ActionSetting setting)
     {
+        //var config = GetActionConfig(setting);
+        //config.AoeCount = 0;
         setting.StatusProvide = new StatusID[1] { StatusID.TitansFavor };
         setting.RotationCheck = () => IsTitanReady && SummonTime <= WeaponRemain;
+
     }
 
     public IBaseAction SummonGaruda => _SummonGaruda.Value;
@@ -74,6 +90,41 @@ public sealed class SMN_Default : SummonerRotation
         setting.RotationCheck = () => IsIfritReady && SummonTime <= WeaponRemain;
     }
 
+    public bool isPartyBurst
+    {
+        get
+        {
+            foreach (var member in PartyMembers)
+            {
+                if (member != null && member.StatusList != null)
+                {
+                    if (member.HasStatus(true, StatusID.Divination, StatusID.Brotherhood, StatusID.BattleLitany, StatusID.ArcaneCircle, StatusID.StarryMuse, StatusID.Embolden, StatusID.SearingLight, StatusID.WanderersMinuet, StatusID.Devilment) || member.HasStatus(false, StatusID.Divination, StatusID.Brotherhood, StatusID.BattleLitany, StatusID.ArcaneCircle, StatusID.StarryMuse, StatusID.Embolden, StatusID.SearingLight, StatusID.WanderersMinuet, StatusID.Devilment))
+                    {
+                        return true; // Found at least one member with a burst active
+                    }
+                }
+            }
+            return false; // No member is bursting
+        }
+    }
+
+    public bool isPartyMedicated
+    {
+        get
+        {
+            foreach (var member in PartyMembers)
+            {
+                if (member != null && member.StatusList != null)
+                {
+                    if (member.HasStatus(true, StatusID.Medicated) || member.HasStatus(false, StatusID.Medicated))
+                    {
+                        return true; // Found at least one member with a mecication active
+                    }
+                }
+            }
+            return false; // No member is medicated
+        }
+    }
 
     #endregion
 
@@ -100,7 +151,7 @@ public sealed class SMN_Default : SummonerRotation
     #region oGCD Logic
     protected override bool AttackAbility(IAction nextGCD, out IAction? act)
     {
-        if (IsBurst && !Player.HasStatus(false, StatusID.SearingLight))
+        if (!Player.HasStatus(false, StatusID.SearingLight))
         {
             if (SearingLightPvE.CanUse(out act, skipAoeCheck: true)) return true;
         }

@@ -1,16 +1,24 @@
-﻿using Dalamud.Game.ClientState.Objects.SubKinds;
+﻿using Dalamud.Game.ClientState.Objects;
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Utility.Signatures;
 using ExCSS;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Gauge;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using RotationSolver.Basic.Data;
 using RotationSolver.Basic.Rotations.Basic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Linq;
+using System.Runtime.Serialization;
+using static Dalamud.Interface.Utility.Raii.ImRaii;
 using static DefaultRotations.Magical.BobRoss;
 using static FFXIVClientStructs.FFXIV.Client.UI.Misc.DataCenterHelper;
+
+
 
 
 namespace RabbsRotationsNET8.Magical;
@@ -21,36 +29,154 @@ namespace RabbsRotationsNET8.Magical;
 public sealed class BLM_Gamma : BlackMageRotation
 {
     #region Config Options
-    [RotationConfig(CombatType.PvE, Name = "Use Opener (Level 100 only)")]
-    public bool Useopener { get; set; } = false;
 
-    [RotationConfig(CombatType.PvE, Name = "Use Countdown Ability")]
+
+    [RotationConfig(CombatType.PvE, Name = "Use Countdown Ability (Fire 3)")]
     public bool Usecountdown { get; set; } = false;
 
+    [RotationConfig(CombatType.PvE, Name = "When to use Opener")]
+    [Range(1, 4, ConfigUnitType.None, 1)]
+    public OpenWhen When2Open { get; set; } = OpenWhen.Never;
+    
+
     [RotationConfig(CombatType.PvE, Name = "Which Opener to use")]
-    public Openchoice Openerchoice { get; set; } = Openchoice.Standard;
     [Range(1, 2, ConfigUnitType.None, 1)]
+    public Openchoice Openerchoice { get; set; } = Openchoice.Standard;
+    
 
-    [RotationConfig(CombatType.PvE, Name = "Use Leylines in combat when standing still")]
-    public bool LeylineMadness { get; set; } = false;
+    [RotationConfig(CombatType.PvE, Name = "When to use Burst")]
+    [Range(1, 5, ConfigUnitType.None, 1)]
+    public BurstWhen When2Burst { get; set; } = BurstWhen.Never;
 
-    [RotationConfig(CombatType.PvE, Name = "Use both stacks of Leylines automatically")]
-    public bool Leyline2Madness { get; set; } = false;
+    [RotationConfig(CombatType.PvE, Name = "Which Abilities for burst to manage")]
+    [Range(1, 3, ConfigUnitType.None, 1)]
+    public Burstchoice ChoiceBurst { get; set; } = Burstchoice.Leylines;
 
-    [RotationConfig(CombatType.PvE, Name = "Use Retrace when out of Leylines in combat and standing still")]
-    public bool UseRetrace { get; set; } = false;
 
-    [RotationConfig(CombatType.PvE, Name = "Use Gemdraught/Tincture/pot")]
-    public bool UseMedicine { get; set; } = false;
+    [RotationConfig(CombatType.PvE, Name = "How to use pots)")]
+    [Range(1, 3, ConfigUnitType.None, 1)]
+    public Potchoice Poterchoice { get; set; } = Potchoice.Never;
+    
+
+
+
+
+
 
     public enum Openchoice : byte
     {
         [Description("Standard 5+7 Opener")] Standard,
         [Description("Alternative Flare Opener")] AltFlare
     }
+
+    public enum OpenWhen : byte
+    {
+        [Description("Never")] Never,
+        [Description("When boss is Range")] BossInRoom,
+        [Description("When boss is Targeted")] BossIsTarget,
+        [Description("All day everyday")] Allday,
+    }
+
+    public enum BurstWhen : byte
+    {
+        [Description("Never (Self Managed)")] Never,
+        [Description("Only to prevent Cap")] PreventCap,
+        [Description("With others (checks if other people have party buffs")] WithOthers,
+        [Description("Every Two Minutes (uses combat time so expect some error)")] Q2M,
+        [Description("All day everyday")] Allday,
+    }
+
+    public enum Burstchoice : byte
+    {
+        [Description("Leylines")] Leylines,
+        [Description("Xenoglossy")] XenoOnly,
+        [Description("Both Leylines and Xenoglossy")] Both,
+    }
+
+    public enum Potchoice : byte
+    {
+        [Description("Never")] Never,
+        [Description("With others (checks if other people have medicated status")] WithOthers,
+        [Description("Every Two Minutes (uses combat time so expect some error)")] Q2M,
+        [Description("All day everyday")] Allday,
+    }
+
     #endregion
 
     #region Config Under Hood Stuff
+
+    // temp flare fix for alt flare opener only
+    public IBaseAction AltFlareOpenerPvE => _AltFlareOpenerPvE.Value;
+
+    private static void ModifyAltFlareOpenerPvE(ref ActionSetting setting)
+    {
+        setting.RotationCheck = () => InAstralFire;
+        setting.UnlockedByQuestID = 66614u;
+
+    }
+
+    private readonly Lazy<IBaseAction> _AltFlareOpenerPvE = new Lazy<IBaseAction>(delegate
+    {
+        IBaseAction action460 = new BaseAction(ActionID.FlarePvE);
+        ActionSetting setting460 = action460.Setting;
+        ModifyAltFlareOpenerPvE(ref setting460);
+        action460.Setting = setting460;
+        return action460;
+    });
+
+
+    public bool isPartyBurst
+    {
+        get
+        {
+            foreach (var member in PartyMembers)
+            {
+                if (member != null && member.StatusList != null)
+                {
+                    if (member.HasStatus(true, StatusID.Divination, StatusID.Brotherhood, StatusID.BattleLitany, StatusID.ArcaneCircle, StatusID.StarryMuse, StatusID.Embolden, StatusID.SearingLight, StatusID.WanderersMinuet, StatusID.Devilment) || member.HasStatus(false, StatusID.Divination, StatusID.Brotherhood, StatusID.BattleLitany, StatusID.ArcaneCircle, StatusID.StarryMuse, StatusID.Embolden, StatusID.SearingLight, StatusID.WanderersMinuet, StatusID.Devilment))
+                    {
+                        return true; // Found at least one member with a burst active
+                    }
+                    
+                }
+                
+            }
+            return false; // No member is bursting
+        }
+
+    }
+
+    public bool isPartyMedicated
+    {
+        get
+        {
+            foreach (var member in PartyMembers)
+            {
+                if (member != null && member.StatusList != null)
+                {
+                    if (member.HasStatus(true, StatusID.Medicated) || member.HasStatus(false, StatusID.Medicated))
+                    {
+                        return true; // Found at least one member with a mecication active
+                    }
+                    
+                }
+                
+            }
+            return false; // No member is medicated
+        }
+    }
+
+    public bool isAnyBossinRange => AllHostileTargets is not null && AllHostileTargets.Any(hostile => hostile.IsBossFromIcon() || hostile.IsBossFromTTK());
+
+    public bool isCurrentTargetBoss => CurrentTarget is not null && (CurrentTarget.IsBossFromIcon() || CurrentTarget.IsBossFromTTK());
+
+    public bool isOpenerChosen => (When2Open == OpenWhen.BossIsTarget && isCurrentTargetBoss) || (When2Open == OpenWhen.BossInRoom && isAnyBossinRange) || When2Open == OpenWhen.Allday;
+
+    public bool isInOpener => isOpenerChosen && CombatTime > 0 && CombatTime < 60 && InCombat && !Player.HasStatus(true, StatusID.BrinkOfDeath, StatusID.Weakness) && AoeCount == 1;
+
+    public bool isPotReady => (Poterchoice == Potchoice.WithOthers && isPartyMedicated) || (Poterchoice == Potchoice.Q2M && IsWithinFirst15SecondsOfEvenMinute()) || (Poterchoice == Potchoice.Allday);
+
+    public bool isBurstReady => (When2Burst == BurstWhen.WithOthers && isPartyBurst) || (When2Burst == BurstWhen.Q2M && IsWithinFirst15SecondsOfEvenMinute()) || (When2Burst == BurstWhen.Allday);
 
 
     #endregion
@@ -58,7 +184,40 @@ public sealed class BLM_Gamma : BlackMageRotation
     #region underhood stuff
     public bool TargetHasThunderDebuff => Target is not null && Target.HasStatus(true, StatusID.Thunder, StatusID.ThunderIi, StatusID.ThunderIii, StatusID.ThunderIv, StatusID.HighThunder_3872, StatusID.HighThunder);
     public bool ThunderBuffAboutToFallOff => Target is not null && TargetHasThunderDebuff && Target.StatusTime(true, StatusID.Thunder, StatusID.ThunderIi, StatusID.ThunderIii, StatusID.ThunderIv, StatusID.HighThunder_3872, StatusID.HighThunder) < 3;
-    public bool ShouldThunder => Player.HasStatus(true, StatusID.Thunderhead) && (!TargetHasThunderDebuff || ThunderBuffAboutToFallOff);
+    public bool ThunderBuffMoreThan10 => Target is not null && TargetHasThunderDebuff && Target.StatusTime(true, StatusID.Thunder, StatusID.ThunderIi, StatusID.ThunderIii, StatusID.ThunderIv, StatusID.HighThunder_3872, StatusID.HighThunder) > 10;
+    /*
+    public float ThunderTime => (Target is not null && TargetHasThunderDebuff) ? Target.StatusTime(true, StatusID.Thunder, StatusID.ThunderIi, StatusID.ThunderIii, StatusID.ThunderIv, StatusID.HighThunder_3872, StatusID.HighThunder):0;
+    public int ThunderTicks
+    {
+        get
+        {
+            if (ThunderTime > 0 && ThunderTime <= 3.0f)
+            {
+                return 1;
+            }
+            return (int)(ThunderTime / 3.0f);
+        }
+    }
+    */
+    //public bool ShouldThunder => Player.HasStatus(true, StatusID.Thunderhead) && (!TargetHasThunderDebuff || ThunderBuffAboutToFallOff);
+    public bool ShouldThunder
+    {
+        get
+        {
+            if (isInOpener)
+            {
+                int currentGcdEstimate = (int)(CombatTime / GetGCDRecastTime);
+
+                return Player.HasStatus(true, StatusID.Thunderhead) &&
+                       currentGcdEstimate >= 9 && currentGcdEstimate <= 12;
+            }
+            else
+            {
+                return Player.HasStatus(true, StatusID.Thunderhead) &&
+                       (!TargetHasThunderDebuff || ThunderBuffAboutToFallOff);
+            }
+        }
+    }
     private Stopwatch? noHostilesTimer = null;
 
     public double GetTimeSinceNoHostilesInCombat()
@@ -78,6 +237,12 @@ public sealed class BLM_Gamma : BlackMageRotation
             return 0.0;
         }
     }
+    public double GetGCDRecastTime = (float)ActionManager.GetAdjustedRecastTime(ActionType.Action, 162) / 1000;
+
+    public bool willHave2PolyglotWithin6GCDs => (PolyglotStacks == 1 && EnochianTime < 6 * GetGCDRecastTime) || PolyglotStacks >=2;
+
+    public bool willHave2PolyglotWithin2GCDs => (PolyglotStacks == 1 && EnochianTime < 2 * GetGCDRecastTime) || PolyglotStacks >= 2;
+
     public bool WillBeAbleToFlareStarST
     {
         get
@@ -114,6 +279,8 @@ public sealed class BLM_Gamma : BlackMageRotation
             return false;
         }
     }
+
+
     public bool WillBeAbleToFlareStarMT
     {
         get
@@ -148,35 +315,88 @@ public sealed class BLM_Gamma : BlackMageRotation
         }
     }
 
-    //public static IBaseAction RainbowPrePull { get; } = new BaseAction((ActionID)34688);
 
-    public IBaseAction FreezePvE2 => _FreezePvECreator2.Value;
 
-    private static void ModifyFreezePvE(ref ActionSetting setting)
+    public unsafe int AoeCount
     {
-        //setting.ActionCheck = () => InUmbralIce && UmbralHearts == 0;
-        setting.RotationCheck = () => InUmbralIce;
-        setting.UnlockedByQuestID = 66611u;
-        
-        //setting.CreateConfig = () => new ActionConfig
+        get
+        {
+            int maxAoeCount = 0;
+            if (!CustomRotation.IsManual)
+            {
+                if (AllHostileTargets != null)
+                {
+                    foreach (var centerTarget in AllHostileTargets)
+                    {
+                        // Check if the centerTarget is in range (566) OR line of sight (562) of Flare (ID 162)
+                        uint flareActionId = 162;
+                        uint rangeCheckResult = ActionManager.GetActionInRangeOrLoS(flareActionId, (GameObject*)Player.Address, (GameObject*)centerTarget.Address);
 
+                        if (rangeCheckResult != 566 && rangeCheckResult != 562)
+                        {
+                            int currentAoeCount = AllHostileTargets.Count(otherTarget =>
+                                Vector3.Distance(centerTarget.Position, otherTarget.Position) < (5 + centerTarget.HitboxRadius));
+
+                            maxAoeCount = Math.Max(maxAoeCount, currentAoeCount);
+                        }
+                    }
+                }
+            }
+            else if (AllHostileTargets != null && CurrentTarget != null)
+            {
+                maxAoeCount = AllHostileTargets.Count(o => Vector3.Distance(CurrentTarget.Position, o.Position) < (5 + o.HitboxRadius));
+            }
+
+            return maxAoeCount;
+        }
     }
 
-    private readonly Lazy<IBaseAction> _FreezePvECreator2 = new Lazy<IBaseAction>(delegate
+    public unsafe int GetAoeCount(IBaseAction action)
     {
-        IBaseAction action460 = new BaseAction(ActionID.FreezePvE);
-        ActionSetting setting460 = action460.Setting;
-        ModifyFreezePvE(ref setting460);
-        action460.Setting = setting460;
-        return action460;
-    });
+        int maxAoeCount = 0;
+
+        if (!CustomRotation.IsManual)
+        {
+            if (AllHostileTargets != null)
+            {
+                foreach (var centerTarget in AllHostileTargets)
+                {
+                    
+                    // Check if the centerTarget is in range or line of sight of the specified action
+                    uint rangeCheckResult = ActionManager.GetActionInRangeOrLoS(
+                        action.ID,
+                        (GameObject*)Player.Address,
+                        (GameObject*)centerTarget.Address);
+
+                    // Assuming 566 and 562 still represent "out of range" or "no LoS"
+                    if (rangeCheckResult != 566 && rangeCheckResult != 562)
+                    {
+                        int currentAoeCount = AllHostileTargets.Count(otherTarget =>
+                            Vector3.Distance(centerTarget.Position, otherTarget.Position) < (action.TargetInfo.EffectRange + centerTarget.HitboxRadius));
+
+                        maxAoeCount = Math.Max(maxAoeCount, currentAoeCount);
+                    }
+                }
+            }
+        }
+        else if (AllHostileTargets != null && CurrentTarget != null) // Use action.Target.Target
+        {
+            maxAoeCount = AllHostileTargets.Count(otherTarget =>
+                Vector3.Distance(CurrentTarget.Position, otherTarget.Position) < (action.TargetInfo.EffectRange + otherTarget.HitboxRadius));
+        }
+
+        return maxAoeCount;
+    }
+
+
 
     public bool shouldTranspose
     {
         get
         {
             var recentActions = RecordActions.Take(2);
-            if (InUmbralIce && recentActions.Any(x => x.Action.RowId == FreezePvE.ID))
+            var lastAction = RecordActions.FirstOrDefault(); // Get the first (most recent) action, or null if the list is empty
+            if (AoeCount >= 3 && lastAction != null && (lastAction.Action.RowId == FoulPvE.ID || lastAction.Action.RowId == ThunderIiiPvE.ID || lastAction.Action.RowId == ParadoxPvE.ID))
             {
                 return true;
             }
@@ -191,7 +411,17 @@ public sealed class BLM_Gamma : BlackMageRotation
             {
                 if (!FlarePvE.CanUse(out _) && !DespairPvE.CanUse(out _) && !FlareStarPvE.CanUse(out _) && !FireIvPvE.CanUse(out _) && !ParadoxPvE.CanUse(out _) && ManafontPvE.Cooldown.IsCoolingDown)
                 {
-                    return true;
+                    if (!NextGCDisInstant)
+                    {
+                        if (CanMakeInstant)
+                        {
+                            return true;
+                        }
+                    }
+                    if(NextGCDisInstant)
+                    {
+                        return true;
+                    }
                 }
             }
             if (InUmbralIce)
@@ -203,24 +433,66 @@ public sealed class BLM_Gamma : BlackMageRotation
             return false;
         }
     }
+
+    public bool shouldXeno
+    {
+        get 
+        { 
+            if (PolyglotStacks == 3)
+                { return true; }
+
+            if (PolyglotStacks >0 && isBurstReady && CombatTime > 60)
+            {
+                if (ChoiceBurst == Burstchoice.Both || ChoiceBurst == Burstchoice.XenoOnly)
+                    { return true; }
+            }
+            if (PolyglotStacks > 0 && isInOpener && CombatTime < 30 && Openerchoice == Openchoice.Standard && CurrentMp < FireIvPvE.Info.MPNeed)
+                return true;
+            if (PolyglotStacks > 0 && isInOpener && CombatTime < 30 && Openerchoice == Openchoice.AltFlare && AstralSoulStacks == 2)
+                return true;
+
+            return false; 
+        }
+    }
+
+    public bool shouldLeyLine
+    {
+        get
+        {
+            if (LeyLinesPvE.Cooldown.CurrentCharges == LeyLinesPvE.Cooldown.MaxCharges && (ChoiceBurst == Burstchoice.Leylines || ChoiceBurst == Burstchoice.Both) && When2Burst == BurstWhen.PreventCap)
+            { return true; }
+
+            if (LeyLinesPvE.Cooldown.CurrentCharges > 0 && isBurstReady)
+            {
+                if (ChoiceBurst == Burstchoice.Both || ChoiceBurst == Burstchoice.Leylines)
+                { return true; }
+            }
+
+            return false;
+        }
+    }
+
     #endregion
 
     #region Countdown
     protected override IAction? CountDownAction(float remainTime)
     {
-        IAction act;
-        if (remainTime < FireIiiPvE.Info.CastTime + CountDownAhead && remainTime > 1)
+        if (Usecountdown)
         {
-            if (FireIiiPvE.CanUse(out act)) return act;
-        }
-        if (remainTime < FireIiiPvE.Info.CastTime - CountDownAhead && IsMoving)
-        {
-            if (!NextGCDisInstant)
+            IAction act;
+            if (remainTime < FireIiiPvE.Info.CastTime + CountDownAhead && remainTime > 1)
             {
-                if (CanMakeInstant)
+                if (FireIiiPvE.CanUse(out act)) return act;
+            }
+            if (remainTime < FireIiiPvE.Info.CastTime - CountDownAhead && IsMoving)
+            {
+                if (!NextGCDisInstant)
                 {
-                    if (SwiftcastPvE.CanUse(out act)) return act;
-                    if (TriplecastPvE.CanUse(out act, usedUp: true)) return act;
+                    if (CanMakeInstant)
+                    {
+                        if (SwiftcastPvE.CanUse(out act)) return act;
+                        if (TriplecastPvE.CanUse(out act, usedUp: true)) return act;
+                    }
                 }
             }
         }
@@ -233,15 +505,86 @@ public sealed class BLM_Gamma : BlackMageRotation
     [RotationDesc]
     protected override bool EmergencyAbility(IAction nextGCD, out IAction? act)
     {
+        
         if (shouldTranspose)
         {
             if (TransposePvE.CanUse(out act, skipCastingCheck:true, skipComboCheck:true, skipAoeCheck:true, skipStatusProvideCheck:true, skipTargetStatusNeedCheck:true, skipTTKCheck:true, usedUp:true)) return true;
+        }
+        if (nextGCD.IsTheSameTo(true, BlizzardIiiPvE))
+        {
+            if (!NextGCDisInstant && CanMakeInstant)
+            {
+                if (isInOpener)
+                {
+                    if (TriplecastPvE.CanUse(out act, usedUp: true)) return true;
+                }
+                if (SwiftcastPvE.CanUse(out act)) return true;
+                if (TriplecastPvE.CanUse(out act, usedUp: true)) return true;
+            }
+
+        }
+        #region Opener
+        if (isInOpener)
+        {
+            if (AmplifierPvE.Cooldown.IsCoolingDown)
+            {
+                if (LeyLinesPvE.CanUse(out act)) return true;
+            }
+        }
+        if (InAstralFire)
+        {
+            
+            if (isInOpener)
+            {
+                if (!NextGCDisInstant && CombatTime < 30)
+                {
+                    if (SwiftcastPvE.CanUse(out act)) return true;
+                }
+                if (!IsPolyglotStacksMaxed)
+                {
+                    if (AmplifierPvE.CanUse(out act)) return true;
+                }
+                if (isPotReady && UseBurstMedicine(out act)) return true;
+            }
+
+            
+
+        }
+
+        #endregion
+        if (nextGCD.IsTheSameTo(true, FlarePvE) && isInOpener && Openerchoice == Openchoice.AltFlare)
+        {
+            if (!NextGCDisInstant && CanMakeInstant)
+            {
+                    if (TriplecastPvE.CanUse(out act, usedUp: true)) return true;
+
+            }
+
+        }
+
+        //for aoe check if we need to use triple cast to save resources for umbral ice
+        if (GetAoeCount(FlarePvE) >= 3)
+        {
+            if (InAstralFire)
+            {
+                if (UmbralHearts > 0)
+                {
+                    if (nextGCD.IsTheSameTo(true, FlarePvE) && ThunderBuffMoreThan10 && !willHave2PolyglotWithin6GCDs) //checking if we won't need to refresh thunder AND we wont have foul after freeze (6gcd's)
+                    {
+                        if (!NextGCDisInstant && TriplecastPvE.Cooldown.CurrentCharges > 0)
+                        {
+                            if (TriplecastPvE.CanUse(out act, usedUp: true)) return true;
+                        }
+
+                    }
+                }
+            }
         }
         if (!ManafontPvE.Cooldown.IsCoolingDown && CurrentMp < 800 && AstralSoulStacks < 6 && InAstralFire)
         {
             if (ManafontPvE.CanUse(out act, skipCastingCheck: true, skipComboCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true, skipTargetStatusNeedCheck: true, skipTTKCheck: true, usedUp: true)) return true;
         }
-
+        
         return base.EmergencyAbility(nextGCD, out act);
     }
 
@@ -282,18 +625,9 @@ public sealed class BLM_Gamma : BlackMageRotation
     {
 
 
-        #region Opener
-        if (Useopener && CombatTime < 30 && InCombat && !Player.HasStatus(true, StatusID.BrinkOfDeath, StatusID.Weakness))
-        {
-            if (AmplifierPvE.Cooldown.IsCoolingDown)
-            {
-                if (LeyLinesPvE.CanUse(out act)) return true;
-            }
-        }
         
-        #endregion
-        if (LeylineMadness && InCombat && HasHostilesInRange && LeyLinesPvE.CanUse(out act, usedUp: Leyline2Madness)) return true;
-        if (!IsLastAbility(ActionID.LeyLinesPvE) && UseRetrace && InCombat && HasHostilesInRange && !Player.HasStatus(true, StatusID.CircleOfPower) && RetracePvE.CanUse(out act)) return true;
+        if (shouldLeyLine && InCombat && HasHostilesInRange && LeyLinesPvE.CanUse(out act, usedUp: shouldLeyLine)) return true;
+        //if (!IsLastAbility(ActionID.LeyLinesPvE) && UseRetrace && InCombat && HasHostilesInRange && !Player.HasStatus(true, StatusID.CircleOfPower) && RetracePvE.CanUse(out act)) return true;
 
         return base.GeneralAbility(nextGCD, out act);
     }
@@ -315,32 +649,14 @@ public sealed class BLM_Gamma : BlackMageRotation
                     }
                 }
             }
-            if (InAstralFire)
-            {
-                #region Opener
-                if (Useopener && CombatTime < 30 && InCombat && !Player.HasStatus(true, StatusID.BrinkOfDeath, StatusID.Weakness))
-                {
-                    if (!NextGCDisInstant)
-                    {
-                        if (SwiftcastPvE.CanUse(out act)) return true;
-                    }
-                    if (!IsPolyglotStacksMaxed)
-                    {
-                        if (AmplifierPvE.CanUse(out act)) return true;
-                    }
-                    if (UseMedicine && UseBurstMedicine(out act)) return true;
-
-                }
-                #endregion
-                
-            }
-            if (CombatTime > 30 || !Useopener)
+            
+            if (CombatTime > 65 || When2Open == OpenWhen.Never)
             {
                 if (!IsPolyglotStacksMaxed)
                 {
                     if (AmplifierPvE.CanUse(out act)) return true;
                 }
-                if (UseMedicine && UseBurstMedicine(out act)) return true;
+                if (isPotReady && UseBurstMedicine(out act)) return true;
             }
                 
         }
@@ -356,195 +672,220 @@ public sealed class BLM_Gamma : BlackMageRotation
         var isTargetBoss = CurrentTarget?.IsBossFromTTK() ?? false;
         var isTargetDying = CurrentTarget?.IsDying() ?? false;
         var recentActions = RecordActions.Take(4);
-        if (IsLastAction(ActionID.FreezePvE))
+        var lastAction = RecordActions.FirstOrDefault(); // Get the first (most recent) action, or null if the list is empty
+        if ((InCombat && GetTimeSinceNoHostilesInCombat() > 5f) || (!InCombat && TimeSinceLastAction.TotalSeconds > 4.5))
         {
-            if (FoulPvE.CanUse(out act)) return true;
-            if (ThunderIiPvE.CanUse(out act)) return true;
-        }
-        
-        if (IsPolyglotStacksMaxed)
-        {
-            if (FoulPvE.CanUse(out act)) return true;
-            if (XenoglossyPvE.CanUse(out act)) return true;
-        }
-        if (!InAstralFire && !InUmbralIce && InCombat)
-        {
-            if (CanMakeInstant && !NextGCDisInstant && CurrentMp > BlizzardIiiPvE.Info.MPNeed)
-            {
-                if (SwiftcastPvE.CanUse(out act)) return true;
-                if (TriplecastPvE.CanUse(out act, usedUp: true)) return true;
-            }
-            if (FireIiiPvE.CanUse(out act)) return true;
-        }
-        if (ThunderIiPvE.CanUse(out act) && ShouldThunder) return true;
-        if (ThunderPvE.CanUse(out act) && ShouldThunder) return true;
-        if (isTargetBoss && isTargetDying)
-        {
-            if (FoulPvE.CanUse(out act)) return true;
-            if (XenoglossyPvE.CanUse(out act)) return true;
-        }
-        if (FreezePvE2.CanUse(out act) && UmbralHearts < 3) return true;
-        if (FlareStarPvE.CanUse(out act)) return true;
-        if (FlarePvE.CanUse(out act) && AstralSoulStacks > 3 && CurrentMp > 1200) return true;
-        if (InUmbralIce && !recentActions.Any(x => x.Action.RowId == FreezePvE.ID))
-        {
-            
-            if ((InCombat && GetTimeSinceNoHostilesInCombat() > 5f) || (!InCombat && TimeSinceLastAction.TotalSeconds > 4.5))
+            if (InUmbralIce)
             {
                 if (UmbralIceStacks < 3 || UmbralHearts < 3)
                 {
                     if (UmbralSoulPvE.CanUse(out act)) return true;
-                }   
+                }
             }
-            if (FreezePvE.CanUse(out act)) return true;
+            if (InAstralFire)
+            {
+                if ((InCombat && GetTimeSinceNoHostilesInCombat() > 5f) || (!InCombat && TimeSinceLastAction.TotalSeconds > 4.5))
+                {
+                    if (TransposePvE.CanUse(out act)) return true;
+                }
+            }
+        }
+        if (GetAoeCount(FlarePvE) >=3)
+        {
+            //astral is flare flare flarestar, umbral is freeze, always use foul or high thunder before transpose
+            // https://www.thebalanceffxiv.com/img/jobs/blm/black-mage-aoe-rotation.png
 
-            if (UmbralIceStacks < 3)
+            // we need to check if we are running low on filler spells before we start fire phase, polyglot should be 2 or more and if thunder is > 10 seconds that wont refresh either.
+
+
+            if (InAstralFire)
             {
-                if (BlizzardIiiPvE.CanUse(out act)) return true;
+
+                if (FlareStarPvE.CanUse(out act)) return true;
+                if (FlarePvE.CanUse(out act, skipAoeCheck:true)) return true;
+                if (AstralSoulStacks == 0)
+                {
+                    if (ThunderIiPvE.CanUse(out act, skipAoeCheck: true) && ShouldThunder) return true;
+                    if (willHave2PolyglotWithin2GCDs)
+                    {
+                        if (FoulPvE.CanUse(out act, skipAoeCheck: true)) return true;
+                    }
+                    
+                }
+                //failsafe to use transpose per balance recommendation /Clipping Transpose after Flare Star is only a small clip and allows for conserving filler spells for Umbral Ice, which is needed to wait out the Transpose cooldown/
+                if (AstralSoulStacks != 6 && CurrentMp < 800)
+                {
+                    if (TransposePvE.CanUse(out act, skipCastingCheck: true)) return true;
+                }
             }
-            if (UmbralHearts < 3 || (CurrentMp < 10000 && !IsLastAction(ActionID.BlizzardIvPvE)))
+
+            if (InUmbralIce)
             {
-                if (BlizzardIvPvE.CanUse(out act)) return true;
+                if (UmbralHearts > 0)
+                {
+                    if (TransposePvE.CanUse(out act, skipCastingCheck: true)) return true;
+                }
+                if (lastAction != null && lastAction.Action.RowId == FreezePvE.ID)
+                {
+                    if (ThunderIiPvE.CanUse(out act, skipAoeCheck: true) && ShouldThunder) return true;
+                    if (FoulPvE.CanUse(out act, skipAoeCheck: true, usedUp: true)) return true;
+                    if (ParadoxPvE.CanUse(out act, skipAoeCheck: true)) return true;
+                }
+                if (FreezePvE.CanUse(out act, skipAoeCheck: true)) return true;
             }
-            if (ParadoxPvEReady)
+            //assumes neither, either start of combat in dungeon or death recovery, use high blizard II as there are no other options
+            if (!InUmbralIce && !InAstralFire)
             {
-                if (BlizzardPvE.CanUse(out act)) return true;
+                if (HighBlizzardIiPvE.CanUse(out act, skipAoeCheck: true)) return true;
             }
 
         }
-        if (InAstralFire)
+        if (GetAoeCount(FlarePvE) == 2)
         {
-            if ((InCombat && GetTimeSinceNoHostilesInCombat() > 5f) || (!InCombat && TimeSinceLastAction.TotalSeconds > 4.5))
+            //astral is flare flare flarestar, umbral is freeze, always use foul or high thunder before transpose
+            // https://www.thebalanceffxiv.com/img/jobs/blm/black-mage-aoe-rotation.png
+
+            // we need to check if we are running low on filler spells before we start fire phase, polyglot should be 2 or more and if thunder is > 10 seconds that wont refresh either.
+
+
+            if (InAstralFire)
             {
-                if (TransposePvE.CanUse(out act)) return true;
-            }
-            if (AstralFireStacks < 3 && (HasFire || ParadoxPvEReady))
-            {
-                if (HasFire)
+                //before we consume umbral hearts lets look if we need to use a triplecast to save resources for umbral ice filler, its in emergency ability section
+                if (lastAction != null && lastAction.Action.RowId == FlareStarPvE.ID)
                 {
-                    if (FireIiiPvE.CanUse(out act)) return true;
+
+                    if (ThunderIiPvE.CanUse(out act, skipAoeCheck: true) && ShouldThunder) return true;
+                    if (willHave2PolyglotWithin2GCDs)
+                    {
+                        if (FoulPvE.CanUse(out act, skipAoeCheck: true)) return true;
+                    }
+                    //failsafe to use transpose per balance recommendation /Clipping Transpose after Flare Star is only a small clip and allows for conserving filler spells for Umbral Ice, which is needed to wait out the Transpose cooldown/
+                    if (TransposePvE.CanUse(out act, skipCastingCheck: true)) return true;
                 }
-                if (ParadoxPvEReady && !IsLastAbility(ActionID.FireIiiPvE))
+                if (FlareStarPvE.CanUse(out act)) return true;
+                if (FlarePvE.CanUse(out act, skipAoeCheck: true)) return true;
+                if (AstralSoulStacks != 6 && CurrentMp < 800)
                 {
+                    if (TransposePvE.CanUse(out act, skipCastingCheck: true)) return true;
+                }
+
+            }
+
+            if (InUmbralIce)
+            {
+                if (UmbralHearts > 0)
+                {
+                    if (TransposePvE.CanUse(out act, skipCastingCheck: true)) return true;
+                }
+                if (lastAction != null && lastAction.Action.RowId == FreezePvE.ID)
+                {
+                    if (ThunderIiPvE.CanUse(out act, skipAoeCheck: true) && ShouldThunder) return true;
+                    if (FoulPvE.CanUse(out act, skipAoeCheck: true, usedUp: true)) return true;
+                    if (ParadoxPvE.CanUse(out act, skipAoeCheck: true)) return true;
+                }
+                if (BlizzardIvPvE.CanUse(out act, skipAoeCheck: true)) return true;
+            }
+            //assumes neither, either start of combat in dungeon or death recovery, use blizzard 4
+            
+            if (!InUmbralIce && !InAstralFire)
+            {
+                if (HighBlizzardIiPvE.CanUse(out act, skipAoeCheck: true)) return true;
+            }
+        }
+        if (GetAoeCount(FlarePvE) < 2)
+        {
+            //single target section starts here
+            if (ThunderPvE.CanUse(out act) && ShouldThunder) return true;
+            if (shouldXeno)
+            {
+                if (XenoglossyPvE.CanUse(out act, usedUp: shouldXeno)) return true;
+            }
+            if (InAstralFire)
+            {
+                if (Openerchoice == Openchoice.AltFlare && isInOpener)
+                {
+                    if (AstralSoulStacks == 4 && CombatTime < 30 && ManafontPvE.Cooldown.HasOneCharge)
+                    {
+                        if (DespairPvE.CanUse(out act)) return true;
+                    }
+                     
+                    if (ManafontPvE.IsInCooldown && ManafontPvE.Cooldown.RecastTimeElapsed > 6 && AstralSoulStacks == 4)
+                    {
+                        if (ParadoxPvE.CanUse(out act, skipStatusProvideCheck: true)) return true;
+                        if (AltFlareOpenerPvE.CanUse(out act, skipAoeCheck: true)) return true;
+                    }
+                    
+                }
+                if (AstralFireStacks < 3)
+                {
+                    if (HasFire)
+                    {
+                        if (FireIiiPvE.CanUse(out act)) return true;
+                    }
                     if (ParadoxPvE.CanUse(out act)) return true;
                 }
-            }
-            // general polyglot stuff here for openers and cap prevention
-
-            if (!ManafontPvE.Cooldown.IsCoolingDown && Openerchoice == Openchoice.Standard && CombatTime < 30)
-            {
-                if (CurrentMp < FireIvPvE.Info.MPNeed)
+                if (WillBeAbleToFlareStarMT && !WillBeAbleToFlareStarST)
                 {
-                    if (FoulPvE.CanUse(out act)) return true;
-                    if (XenoglossyPvE.CanUse(out act)) return true;
+                    if (AltFlareOpenerPvE.CanUse(out act, skipAoeCheck: true)) return true;
                 }
-            }
-            if (!ManafontPvE.Cooldown.IsCoolingDown && Openerchoice == Openchoice.AltFlare && CombatTime < 30)
-            {
-                if (Player.HasStatus(true, StatusID.CircleOfPower))
-                {
-                    if (FoulPvE.CanUse(out act)) return true;
-                    if (XenoglossyPvE.CanUse(out act)) return true;
-                }
-                if (AstralSoulStacks == 4 && !HasFire && !ParadoxPvEReady && CurrentMp == 1600)
+                
+                if (CurrentMp < FireIvPvE.Info.MPNeed && (!IsParadoxActive || CurrentMp < ParadoxPvE.Info.MPNeed) && AstralSoulStacks < 6)
                 {
                     if (DespairPvE.CanUse(out act)) return true;
                 }
-            }
-                /// setting rotation for in combat and planted, moving will be set seperately
-                if (InCombat && (!IsMoving || NextGCDisInstant))
-            {
-                if (ParadoxPvE.CanUse(out act) && ManafontPvE.Cooldown.WillHaveOneChargeGCD(3)) return true;
-
-                if (WillBeAbleToFlareStarMT || WillBeAbleToFlareStarST)
+                if (FlareStarPvE.CanUse(out act)) return true;
+                if (FireIvPvE.CanUse(out act) && CurrentMp >= FireIvPvE.Info.MPNeed + (IsParadoxActive && AstralSoulStacks != 5 ? 1600 : 0)) return true;
+                if (ParadoxPvE.CanUse(out act, skipStatusProvideCheck: true)) return true;
+                if (!NextGCDisInstant)
                 {
-                    if (FlareStarPvE.CanUse(out act)) return true;
-                    if (FlarePvE.CanUse(out var flareAction))
-                    {
-                        if (WillBeAbleToFlareStarST && !WillBeAbleToFlareStarMT)
+                    if (!CanMakeInstant)
                         {
-                            uint flareCost = FlarePvE.Info.MPNeed;
-                            uint remainingMpAfterFlare = CurrentMp - flareCost;
-
-                            const int baseFireFourCost = 1600;
-                            const int fireFourCostWithHeart = 800;
-                            int soulDeficitAfterFlare = 6 - (AstralSoulStacks + 3);
-                            int discountedCastsAfterFlare = Math.Min(soulDeficitAfterFlare, UmbralHearts);
-                            int normalCastsAfterFlare = soulDeficitAfterFlare - discountedCastsAfterFlare;
-
-                            if (!ManafontPvE.Cooldown.IsCoolingDown || (AstralSoulStacks + 3) == 6 || (remainingMpAfterFlare > (discountedCastsAfterFlare * fireFourCostWithHeart) + (normalCastsAfterFlare * baseFireFourCost)))
-                            {
-                                act = flareAction;
-                                return true;
-                            }
-                            else
-                            {
-                                act = null;
-                                return false;
-                            }
+                            if (BlizzardIiiPvE.CanUse(out act)) return true; // skip transpose if we can't make b3 instant per balance stuff
                         }
-                        else
-                        {
-                            act = flareAction;
-                            return true;
-                        }
-                    }
-                    if (!WillBeAbleToFlareStarST)
+                }
+
+                
+                if (InCombat && IsMoving && !NextGCDisInstant && HasHostilesInRange)
+                {
+                    if (PolyglotStacks > 0)
                     {
-                        if (FlarePvE.CanUse(out act, skipAoeCheck: true)) return true;
+                        if (XenoglossyPvE.CanUse(out act, usedUp:true)) return true;
                     }
-                    if (FireIvPvE.CanUse(out act)) return true;
+                    if (CanMakeInstant)
+                    {
+
+                        if (TriplecastPvE.CanUse(out act, usedUp: true)) return true;
+
+                        if (SwiftcastPvE.CanUse(out act)) return true;
+                    }
+                }
+            }
+
+            if (InUmbralIce)
+            {
+                if (UmbralIceStacks < 3)
+                {
+                    if (BlizzardIiiPvE.CanUse(out act)) return true;
+                }
+
+                if (UmbralHearts < 3)
+                {
+                    if (BlizzardIvPvE.CanUse(out act)) return true;
                 }
                 if (IsParadoxActive)
                 {
-                    if (ParadoxPvE.CanUse(out act, skipStatusProvideCheck:true)) return true;
+                    if (ParadoxPvE.CanUse(out act, skipStatusProvideCheck: true)) return true;
                 }
-                if (!IsParadoxActive || CurrentMp < 1600)
-                {
-                    if (DespairPvE.CanUse(out act)) return true;
-                }
+
+                if (BlizzardIiiPvE.CanUse(out act)) return true;
+
             }
-            if (InCombat && IsMoving && !NextGCDisInstant && HasHostilesInRange)
+            if (!InUmbralIce && !InAstralFire)
             {
-                //before wasting triplecast or swiftcast lets check for intant cast stuff, we like to save swiftcast for b3 to start ice phase.
-                //first consider xenoglossy
-                if (PolyglotStacks > 0)
-                {
-                    if (FoulPvE.CanUse(out act)) return true;
-                    if (XenoglossyPvE.CanUse(out act)) return true;
-                }
-
-                // can we use a paradox instant here? general rule is if you do not have firestarter proc it can be used
-                if (ParadoxPvEReady && !HasFire)
-                {
-                    if (ParadoxPvE.CanUse(out act)) return true;
-                }
-                
-                //we can check for fire3 via firestarter
-                if (HasFire)
-                {
-                    if (FireIiiPvE.CanUse(out act)) return true;
-                }
-
-                //lastly despair can be used only when flarestar is unusable this fire season
-                if (!WillBeAbleToFlareStarMT && !WillBeAbleToFlareStarST)
-                {
-                    if (DespairPvE.CanUse(out act)) return true;
-                }
-
-                //if we reached here then flarestar is salvageable and we should use triplecast if available first and swiftcast second(saving for b3)
-                if (CanMakeInstant)
-                {
-                    
-                    if (TriplecastPvE.CanUse(out act, usedUp: true)) return true;
-
-                    if (SwiftcastPvE.CanUse(out act)) return true;
-                }
+                if (BlizzardIiiPvE.CanUse(out act, skipAoeCheck: true)) return true;
             }
 
         }
-        //fallback if here something is messed up
-
         return base.GeneralGCD(out act);
     }
 
@@ -556,15 +897,17 @@ public sealed class BLM_Gamma : BlackMageRotation
     public unsafe override void DisplayStatus()
     {
         //motif
+        ImGui.Text("willHave2PolyglotWithin6GCDs " + willHave2PolyglotWithin6GCDs);
         ImGui.Text("WillBeAbleToFlareStarMT " + WillBeAbleToFlareStarMT);
         ImGui.Text("WillBeAbleToFlareStarST " + WillBeAbleToFlareStarST);
-        ImGui.Text("soulstack " + SoulStackCount);
-        ImGui.Text("even minute " + IsWithinFirst15SecondsOfEvenMinute());
-        ImGui.Text("Combat Time " + CombatTime);
-        ImGui.Text("CombatNoEnemiesTimer " + GetTimeSinceNoHostilesInCombat());
+        ImGui.Text("AoeCount " + AoeCount);
+        ImGui.Text("flarecount " + GetAoeCount(FlarePvE));
         ImGui.Text("shouldTranspose " + shouldTranspose);
-        ImGui.Text("RealAstralDefecit " + (ThisManyInstantCasts + AstralSoulStacks));
-        ImGui.Text("Fire3 time " + FireIiiPvE.Info.CastTime);
+        ImGui.Text("ShouldThunder " + ShouldThunder);
+        ImGui.Text("isInOpener" + isInOpener);
+        ImGui.Text("ManafontPvE.Cooldown.RecastTimeElapsed" + ManafontPvE.Cooldown.RecastTimeElapsed);
+
+
 
         base.DisplayStatus();
     }

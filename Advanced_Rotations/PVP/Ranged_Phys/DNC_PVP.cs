@@ -1,4 +1,5 @@
-﻿using RotationSolver.Basic.Data;
+﻿using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using RotationSolver.Basic.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +16,7 @@ namespace RabbsRotations.Ranged;
 
 public unsafe sealed class DNC_PVP : DancerRotation
 {
+
 
     protected override IAction? CountDownAction(float remainTime)
     {
@@ -51,12 +53,15 @@ public unsafe sealed class DNC_PVP : DancerRotation
     protected unsafe override bool AttackAbility(IAction nextGCD, out IAction? act)
     {
         #region pvp
-
-        //if (Player.MaxHp - Player.CurrentHp >= 10000)
+        //if (UIState.Instance()->LimitBreakController.CurrentUnits >= 4000)
         //{
-            //if (CuringWaltzPvP.CanUse(out act)) return true;
+
         //}
-        if (HasHostilesInRange && !Player.HasStatus(false, StatusID.FlourishingSaberDance, StatusID.EnAvant))
+            //if (Player.MaxHp - Player.CurrentHp >= 10000)
+            //{
+            //if (CuringWaltzPvP.CanUse(out act)) return true;
+            //}
+            if (HasHostilesInRange && !Player.HasStatus(false, StatusID.FlourishingSaberDance, StatusID.EnAvant))
         if (EnAvantPvP.CanUse(out act, usedUp:true)) return true;
 
         if (FanDancePvP.CanUse(out act, skipAoeCheck:true,  usedUp:true)) return true;
@@ -68,4 +73,5 @@ public unsafe sealed class DNC_PVP : DancerRotation
 
         return base.AttackAbility(nextGCD, out act);
     }
+
 }

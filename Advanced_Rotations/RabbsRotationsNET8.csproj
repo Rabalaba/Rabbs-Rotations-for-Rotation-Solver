@@ -4,7 +4,7 @@
         <TargetFramework>net9.0-windows7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Authors>Rabbs</Authors>
-        <Version>9.0.1.4</Version>
+        <Version>9.0.1.5</Version>
         <PlatformTarget>x64</PlatformTarget>
         <Platforms>x64</Platforms>
 
@@ -95,7 +95,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="RotationSolverReborn.Basic" Version="*-*" />
+      <PackageReference Include="RotationSolverReborn.Basic" Version="7.2.5.11" />
     </ItemGroup>
 
 </Project>
