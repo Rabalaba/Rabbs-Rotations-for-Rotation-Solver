@@ -4,7 +4,7 @@
         <TargetFramework>net9.0-windows7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Authors>Rabbs</Authors>
-        <Version>9.0.1.7</Version>
+        <Version>9.0.1.8</Version>
         <PlatformTarget>x64</PlatformTarget>
         <Platforms>x64</Platforms>
 
@@ -24,9 +24,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Compile Remove="Duty\**" />
-      <EmbeddedResource Remove="Duty\**" />
-      <None Remove="Duty\**" />
     </ItemGroup>
 
     <!-- Add package reference to RotationSolver.Basic -->
@@ -82,6 +79,19 @@
         <Using Include="RotationSolver.Basic.Rotations" />
         <Using Include="System.Numerics" />
         <Using Include="System.Reflection" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Duty\" />
+      <Folder Include="Job_Helpers\" />
+      <Folder Include="PVE\Healer\" />
+      <Folder Include="PVE\Melee\" />
+      <Folder Include="PVE\Ranged_Phys\" />
+      <Folder Include="PVE\Tank\" />
+      <Folder Include="PVP\Healer\" />
+      <Folder Include="PVP\Melee\" />
+      <Folder Include="PVP\Ranged_Magic\" />
+      <Folder Include="PVP\Tank\" />
     </ItemGroup>
 
     <ItemGroup>
