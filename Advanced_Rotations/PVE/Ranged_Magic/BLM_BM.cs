@@ -22,7 +22,7 @@ using static FFXIVClientStructs.FFXIV.Client.UI.Misc.DataCenterHelper;
 
 
 namespace RabbsRotationsNET8.Magical;
-[Rotation("Rabbs Blackest Mage for Level 100 Mages only", CombatType.PvE, GameVersion = "7.2")]
+[Rotation("Rabbs Blackest Mage for Level 100 Mages only", CombatType.PvE, GameVersion = "7.25")]
 [SourceCode(Path = "main/BasicRotations/Magical/BLM_Beta.cs")]
 [Api(4)]
 
@@ -601,32 +601,25 @@ public sealed class BLM_Gamma : BlackMageRotation
         if (BetweenTheLinesPvE.CanUse(out act)) return true;
         return base.MoveBackAbility(nextGCD, out act);
     }
+    
+    /*
 
     [RotationDesc(ActionID.ManawardPvE)]
-    protected override bool DefenseSingleAbility(IAction nextGCD, out IAction? act)
+    protected sealed override bool DefenseAreaAbility(IAction nextGCD, out IAction? act)
     {
-        if (ManawardPvE.CanUse(out act))
-        {
-            return true;
-        }
-        return base.DefenseSingleAbility(nextGCD, out act);
+        if (ManawardPvE.CanUse(out act)) return true;
+        return base.DefenseAreaAbility(nextGCD, out act);
     }
 
     [RotationDesc(ActionID.ManawardPvE, ActionID.AddlePvE)]
-    protected sealed override bool DefenseAreaAbility(IAction nextGCD, out IAction? act)
+    protected override bool DefenseSingleAbility(IAction nextGCD, out IAction? act)
     {
-        if (ManawardPvE.CanUse(out act))
-        {
-            return true;
-        }
-
-        if (AddlePvE.CanUse(out act))
-        {
-            return true;
-        }
-
-        return base.DefenseAreaAbility(nextGCD, out act);
+        if (ManawardPvE.CanUse(out act)) return true;
+        if (AddlePvE.CanUse(out act)) return true;
+        return base.DefenseSingleAbility(nextGCD, out act);
     }
+    */
+
     #endregion
 
     #region oGCD Logic
