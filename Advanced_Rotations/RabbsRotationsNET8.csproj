@@ -24,6 +24,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Remove="Duty\**" />
+      <EmbeddedResource Remove="Duty\**" />
+      <None Remove="Duty\**" />
     </ItemGroup>
 
     <!-- Add package reference to RotationSolver.Basic -->
@@ -79,19 +82,6 @@
         <Using Include="RotationSolver.Basic.Rotations" />
         <Using Include="System.Numerics" />
         <Using Include="System.Reflection" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Duty\" />
-      <Folder Include="Job_Helpers\" />
-      <Folder Include="PVE\Healer\" />
-      <Folder Include="PVE\Melee\" />
-      <Folder Include="PVE\Ranged_Phys\" />
-      <Folder Include="PVE\Tank\" />
-      <Folder Include="PVP\Healer\" />
-      <Folder Include="PVP\Melee\" />
-      <Folder Include="PVP\Ranged_Magic\" />
-      <Folder Include="PVP\Tank\" />
     </ItemGroup>
 
     <ItemGroup>
