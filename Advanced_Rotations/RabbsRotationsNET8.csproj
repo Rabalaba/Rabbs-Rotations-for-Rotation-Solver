@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net9.0-windows7.0</TargetFramework>
@@ -95,7 +95,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="RotationSolverReborn.Basic" Version="7.2.5.58" />
+      <PackageReference Include="RotationSolverReborn.Basic" Version="*-*" />
     </ItemGroup>
 
-</Project>
+</Project>=
