@@ -603,18 +603,29 @@ public sealed class BLM_Gamma : BlackMageRotation
     }
 
     [RotationDesc(ActionID.ManawardPvE)]
-    protected sealed override bool DefenseAreaAbility(IAction nextGCD, out IAction? act)
+    protected override bool DefenseSingleAbility(IAction nextGCD, out IAction? act)
     {
-        if (ManawardPvE.CanUse(out act)) return true;
-        return base.DefenseAreaAbility(nextGCD, out act);
+        if (ManawardPvE.CanUse(out act))
+        {
+            return true;
+        }
+        return base.DefenseSingleAbility(nextGCD, out act);
     }
 
     [RotationDesc(ActionID.ManawardPvE, ActionID.AddlePvE)]
-    protected override bool DefenseSingleAbility(IAction nextGCD, out IAction? act)
+    protected sealed override bool DefenseAreaAbility(IAction nextGCD, out IAction? act)
     {
-        if (ManawardPvE.CanUse(out act)) return true;
-        if (AddlePvE.CanUse(out act)) return true;
-        return base.DefenseSingleAbility(nextGCD, out act);
+        if (ManawardPvE.CanUse(out act))
+        {
+            return true;
+        }
+
+        if (AddlePvE.CanUse(out act))
+        {
+            return true;
+        }
+
+        return base.DefenseAreaAbility(nextGCD, out act);
     }
     #endregion
 
