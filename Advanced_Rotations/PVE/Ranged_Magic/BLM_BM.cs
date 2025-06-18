@@ -22,7 +22,7 @@ using static FFXIVClientStructs.FFXIV.Client.UI.Misc.DataCenterHelper;
 
 
 namespace RabbsRotationsNET8.Magical;
-[Rotation("Rabbs Blackest Mage for Level 100 Mages only", CombatType.PvE, GameVersion = "7.25")]
+[Rotation("Rabbs Mage", CombatType.PvE, GameVersion = "7.25")]
 [SourceCode(Path = "main/BasicRotations/Magical/BLM_Beta.cs")]
 [Api(4)]
 
