@@ -37,7 +37,7 @@ jobs:
         run: dotnet build --no-restore -c Release Advanced_Rotations/RabbsRotationsNET8.csproj -p:AssemblyVersion=${{ env.tag }} -p:FileVersion=${{ env.tag }} -p:InformationalVersion=${{ env.tag }} --output .\build
 
       - name: Publish Rotations
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.2.2
         with:
           files: |
             ./build/RabbsRotationsNET8.dll
