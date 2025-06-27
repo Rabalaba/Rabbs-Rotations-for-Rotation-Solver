@@ -406,7 +406,7 @@ public sealed class BLM_Gamma : BlackMageRotation
             }
             if (InAstralFire)
             {
-                if (CurrentMp  < 800 && AstralSoulStacks < 6 && !WillBeAbleToFlareStarMT && !WillBeAbleToFlareStarST && !IsParadoxActive && ManafontPvE.Cooldown.IsCoolingDown)
+                if (CurrentMp  < 800 && AstralSoulStacks < 6 && !WillBeAbleToFlareStarMT && !WillBeAbleToFlareStarST && (!IsParadoxActive || CurrentMp < 1600) && ManafontPvE.Cooldown.IsCoolingDown)
                 {
                     if (!NextGCDisInstant)
                     {
