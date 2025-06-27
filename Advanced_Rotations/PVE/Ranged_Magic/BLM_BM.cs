@@ -5,6 +5,7 @@ using ExCSS;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Gauge;
+using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using RotationSolver.Basic.Data;
@@ -125,46 +126,32 @@ public sealed class BLM_Gamma : BlackMageRotation
     });
 
 
-    public bool isPartyBurst
-    {
-        get
-        {
-            foreach (var member in PartyMembers)
-            {
-                if (member != null && member.StatusList != null)
-                {
-                    if (member.HasStatus(true, StatusID.Divination, StatusID.Brotherhood, StatusID.BattleLitany, StatusID.ArcaneCircle, StatusID.StarryMuse, StatusID.Embolden, StatusID.SearingLight, StatusID.WanderersMinuet, StatusID.Devilment) || member.HasStatus(false, StatusID.Divination, StatusID.Brotherhood, StatusID.BattleLitany, StatusID.ArcaneCircle, StatusID.StarryMuse, StatusID.Embolden, StatusID.SearingLight, StatusID.WanderersMinuet, StatusID.Devilment))
-                    {
-                        return true; // Found at least one member with a burst active
-                    }
-                    
-                }
-                
-            }
-            return false; // No member is bursting
-        }
+    private static readonly HashSet<uint> burstStatusIds = new HashSet<uint>
+{
+    (uint)StatusID.Divination,
+    (uint)StatusID.Brotherhood,
+    (uint)StatusID.BattleLitany,
+    (uint)StatusID.ArcaneCircle,
+    (uint)StatusID.StarryMuse,
+    (uint)StatusID.Embolden,
+    (uint)StatusID.SearingLight,
+    (uint)StatusID.BattleVoice,
+    (uint)StatusID.TechnicalFinish,
+    (uint)StatusID.RadiantFinale
 
-    }
+};
 
-    public bool isPartyMedicated
-    {
-        get
-        {
-            foreach (var member in PartyMembers)
-            {
-                if (member != null && member.StatusList != null)
-                {
-                    if (member.HasStatus(true, StatusID.Medicated) || member.HasStatus(false, StatusID.Medicated))
-                    {
-                        return true; // Found at least one member with a mecication active
-                    }
-                    
-                }
-                
-            }
-            return false; // No member is medicated
-        }
-    }
+    public bool isPartyBurst => PartyMembers?.Any(member =>
+        member?.StatusList?.Any(status => burstStatusIds.Contains(status.StatusId)) == true
+    ) == true;
+
+    public bool isPartyMedicated => PartyMembers?.Any(member =>
+    member?.StatusList?.Any(status => status.StatusId == (uint)StatusID.Medicated) == true
+) == true;
+
+
+
+
 
     public bool isAnyBossinRange => AllHostileTargets is not null && AllHostileTargets.Any(hostile => hostile.IsBossFromIcon() || hostile.IsBossFromTTK());
 
@@ -396,9 +383,19 @@ public sealed class BLM_Gamma : BlackMageRotation
         {
             var recentActions = RecordActions.Take(2);
             var lastAction = RecordActions.FirstOrDefault(); // Get the first (most recent) action, or null if the list is empty
-            if (AoeCount >= 3 && lastAction != null && (lastAction.Action.RowId == FoulPvE.ID || lastAction.Action.RowId == ThunderIiiPvE.ID || lastAction.Action.RowId == ParadoxPvE.ID))
+            if (InUmbralIce)
             {
-                return true;
+                if (AoeCount >= 3 && lastAction != null && (lastAction.Action.RowId == FoulPvE.ID || lastAction.Action.RowId == ThunderIiiPvE.ID || lastAction.Action.RowId == ParadoxPvE.ID))
+                {
+                    return true;
+                }
+            }
+            if (InAstralFire)
+            {
+                if (AoeCount >= 3 && AstralSoulStacks < 6 && !WillBeAbleToFlareStarMT && lastAction != null && (lastAction.Action.RowId == FoulPvE.ID || lastAction.Action.RowId == ThunderIiiPvE.ID || lastAction.Action.RowId == ParadoxPvE.ID))
+                {
+                    return true;
+                }
             }
             if (GetTimeSinceNoHostilesInCombat() > 5f) //we are in combat but nothing to attack for 5 seconds
             {
@@ -409,7 +406,7 @@ public sealed class BLM_Gamma : BlackMageRotation
             }
             if (InAstralFire)
             {
-                if (!FlarePvE.CanUse(out _) && !DespairPvE.CanUse(out _) && !FlareStarPvE.CanUse(out _) && !FireIvPvE.CanUse(out _) && !ParadoxPvE.CanUse(out _) && ManafontPvE.Cooldown.IsCoolingDown)
+                if (CurrentMp  < 800 && AstralSoulStacks < 6 && !WillBeAbleToFlareStarMT && !WillBeAbleToFlareStarST && !IsParadoxActive && ManafontPvE.Cooldown.IsCoolingDown)
                 {
                     if (!NextGCDisInstant)
                     {
@@ -901,8 +898,8 @@ public sealed class BLM_Gamma : BlackMageRotation
     public unsafe override void DisplayStatus()
     {
         //motif
-        ImGui.Text("willHave2PolyglotWithin6GCDs " + willHave2PolyglotWithin6GCDs);
-        ImGui.Text("WillBeAbleToFlareStarMT " + WillBeAbleToFlareStarMT);
+        ImGui.Text("isPartyMedicated4 " + isPartyMedicated);
+        ImGui.Text("isPartyBurst2 " + isPartyBurst);
         ImGui.Text("WillBeAbleToFlareStarST " + WillBeAbleToFlareStarST);
         ImGui.Text("AoeCount " + AoeCount);
         ImGui.Text("flarecount " + GetAoeCount(FlarePvE));
