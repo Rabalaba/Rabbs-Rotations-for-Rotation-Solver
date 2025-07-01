@@ -5,7 +5,7 @@ namespace DefaultRotations.Magical;
 
 [Rotation("BobRoss by Rabbs", CombatType.PvE, GameVersion = "7.05", Description = "Kindly created and donated by Rabbs and further update made by IcWa")]
 [SourceCode(Path = "main/BasicRotations/Magical/ICWA_PCT_BETA.cs")]
-[Api(4)]
+[Api(5)]
 public sealed class BobRoss : PictomancerRotation
 {
     #region Config Options

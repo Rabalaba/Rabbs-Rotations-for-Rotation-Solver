@@ -8,12 +8,15 @@ using FFXIVClientStructs.FFXIV.Client.Game.Gauge;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using Lumina.Excel.Sheets;
+using Lumina.Excel.Sheets.Experimental;
 using RotationSolver.Basic.Data;
 using RotationSolver.Basic.Rotations.Basic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Linq;
+using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Serialization;
 using static Dalamud.Interface.Utility.Raii.ImRaii;
 using static DefaultRotations.Magical.BobRoss;
@@ -25,7 +28,7 @@ using static FFXIVClientStructs.FFXIV.Client.UI.Misc.DataCenterHelper;
 namespace RabbsRotationsNET8.Magical;
 [Rotation("Rabbs Mage", CombatType.PvE, GameVersion = "7.25")]
 [SourceCode(Path = "main/BasicRotations/Magical/BLM_Beta.cs")]
-[Api(4)]
+[Api(5)]
 
 public sealed class BLM_Gamma : BlackMageRotation
 {
@@ -109,7 +112,7 @@ public sealed class BLM_Gamma : BlackMageRotation
     // temp flare fix for alt flare opener only
     public IBaseAction AltFlareOpenerPvE => _AltFlareOpenerPvE.Value;
 
-    private static void ModifyAltFlareOpenerPvE(ref ActionSetting setting)
+    private static void ModifyAltFlareOpenerPvE(ref RotationSolver.Basic.Actions.ActionSetting setting)
     {
         setting.RotationCheck = () => InAstralFire;
         setting.UnlockedByQuestID = 66614u;
@@ -119,7 +122,7 @@ public sealed class BLM_Gamma : BlackMageRotation
     private readonly Lazy<IBaseAction> _AltFlareOpenerPvE = new Lazy<IBaseAction>(delegate
     {
         IBaseAction action460 = new BaseAction(ActionID.FlarePvE);
-        ActionSetting setting460 = action460.Setting;
+        RotationSolver.Basic.Actions.ActionSetting setting460 = action460.Setting;
         ModifyAltFlareOpenerPvE(ref setting460);
         action460.Setting = setting460;
         return action460;
@@ -599,7 +602,7 @@ public sealed class BLM_Gamma : BlackMageRotation
         return base.MoveBackAbility(nextGCD, out act);
     }
     
-    /*
+    
 
     [RotationDesc(ActionID.ManawardPvE)]
     protected sealed override bool DefenseAreaAbility(IAction nextGCD, out IAction? act)
@@ -615,7 +618,7 @@ public sealed class BLM_Gamma : BlackMageRotation
         if (AddlePvE.CanUse(out act)) return true;
         return base.DefenseSingleAbility(nextGCD, out act);
     }
-    */
+    
 
     #endregion
 
@@ -674,6 +677,7 @@ public sealed class BLM_Gamma : BlackMageRotation
         var isTargetDying = CurrentTarget?.IsDying() ?? false;
         var recentActions = RecordActions.Take(4);
         var lastAction = RecordActions.FirstOrDefault(); // Get the first (most recent) action, or null if the list is empty
+
         if ((InCombat && GetTimeSinceNoHostilesInCombat() > 5f) || (!InCombat && TimeSinceLastAction.TotalSeconds > 4.5))
         {
             if (InUmbralIce)
@@ -899,7 +903,7 @@ public sealed class BLM_Gamma : BlackMageRotation
     {
         //motif
         ImGui.Text("isPartyMedicated4 " + isPartyMedicated);
-        ImGui.Text("isPartyBurst2 " + isPartyBurst);
+        ImGui.Text("TerritoryContentType " + TerritoryContentType);
         ImGui.Text("WillBeAbleToFlareStarST " + WillBeAbleToFlareStarST);
         ImGui.Text("AoeCount " + AoeCount);
         ImGui.Text("flarecount " + GetAoeCount(FlarePvE));

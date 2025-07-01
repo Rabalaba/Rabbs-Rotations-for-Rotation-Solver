@@ -4,7 +4,7 @@
         <TargetFramework>net9.0-windows7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Authors>Rabbs</Authors>
-        <Version>9.0.2.2</Version>
+        <Version>9.0.2.3</Version>
         <PlatformTarget>x64</PlatformTarget>
         <Platforms>x64</Platforms>
 
@@ -22,9 +22,6 @@
         <NoWarn>S101;</NoWarn>
         <DebugType>full</DebugType>
     </PropertyGroup>
-
-    <ItemGroup>
-    </ItemGroup>
 
     <!-- Add package reference to RotationSolver.Basic -->
 
@@ -95,7 +92,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="RotationSolverReborn.Basic" Version="*-*" />
+      <PackageReference Include="ECommons" Version="3.0.0.2" />
+      <PackageReference Include="RotationSolverReborn.Basic" Version="7.2.5.87" />
     </ItemGroup>
 
 </Project>

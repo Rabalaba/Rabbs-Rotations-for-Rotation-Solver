@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace RabbsRotations.Ranged;
 [Rotation("Rabbs Dancer PVP", CombatType.PvP, GameVersion = "6.58")]
-[Api(4)]
+[Api(5)]
 [SourceCode(Path = "main/RabbsRotations/Ranged/DNC.cs")]
 
 
