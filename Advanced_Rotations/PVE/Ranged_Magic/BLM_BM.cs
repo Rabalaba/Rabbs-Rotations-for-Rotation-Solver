@@ -459,10 +459,10 @@ public sealed class BLM_Gamma : BlackMageRotation
     {
         get
         {
-            if (LeyLinesPvE.Cooldown.CurrentCharges == LeyLinesPvE.Cooldown.MaxCharges && (ChoiceBurst == Burstchoice.Leylines || ChoiceBurst == Burstchoice.Both) && When2Burst == BurstWhen.PreventCap)
+            if (LeyLinesPvE.Cooldown.CurrentCharges == LeyLinesPvE.Cooldown.MaxCharges && !Player.HasStatus(true, StatusID.LeyLines) && (ChoiceBurst == Burstchoice.Leylines || ChoiceBurst == Burstchoice.Both) && When2Burst == BurstWhen.PreventCap)
             { return true; }
 
-            if (LeyLinesPvE.Cooldown.CurrentCharges > 0 && isBurstReady)
+            if (LeyLinesPvE.Cooldown.CurrentCharges > 0 && isBurstReady && !Player.HasStatus(true, StatusID.LeyLines))
             {
                 if (ChoiceBurst == Burstchoice.Both || ChoiceBurst == Burstchoice.Leylines)
                 { return true; }
@@ -526,7 +526,7 @@ public sealed class BLM_Gamma : BlackMageRotation
         #region Opener
         if (isInOpener)
         {
-            if (AmplifierPvE.Cooldown.IsCoolingDown)
+            if (AmplifierPvE.Cooldown.IsCoolingDown && !Player.HasStatus(true, StatusID.LeyLines))
             {
                 if (LeyLinesPvE.CanUse(out act)) return true;
             }
@@ -850,7 +850,7 @@ public sealed class BLM_Gamma : BlackMageRotation
                 }
 
                 
-                if (InCombat && IsMoving && !NextGCDisInstant && HasHostilesInRange)
+                if (InCombat && IsMoving && !NextGCDisInstant && HasHostilesInRange && NextAbilityToNextGCD < 0.1)
                 {
                     if (PolyglotStacks > 0)
                     {
@@ -902,9 +902,9 @@ public sealed class BLM_Gamma : BlackMageRotation
     public unsafe override void DisplayStatus()
     {
         //motif
-        ImGui.Text("isPartyMedicated4 " + isPartyMedicated);
-        ImGui.Text("TerritoryContentType " + TerritoryContentType);
-        ImGui.Text("WillBeAbleToFlareStarST " + WillBeAbleToFlareStarST);
+        ImGui.Text("GCDTime " + GCDTime);
+        ImGui.Text("WeaponElapsed " + WeaponElapsed);
+        ImGui.Text("NextAbilityToNextGCD " + NextAbilityToNextGCD);
         ImGui.Text("AoeCount " + AoeCount);
         ImGui.Text("flarecount " + GetAoeCount(FlarePvE));
         ImGui.Text("shouldTranspose " + shouldTranspose);
