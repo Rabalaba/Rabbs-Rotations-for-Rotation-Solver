@@ -162,7 +162,7 @@ public sealed class BLM_Gamma : BlackMageRotation
 
     public bool isOpenerChosen => (When2Open == OpenWhen.BossIsTarget && isCurrentTargetBoss) || (When2Open == OpenWhen.BossInRoom && isAnyBossinRange) || When2Open == OpenWhen.Allday;
 
-    public bool isInOpener => isOpenerChosen && CombatTime > 0 && CombatTime < 60 && InCombat && !Player.HasStatus(true, StatusID.BrinkOfDeath, StatusID.Weakness) && AoeCount == 1;
+    public bool isInOpener => isOpenerChosen && CombatTime > 0 && CombatTime < 60 && InCombat && !Player.HasStatus(true, StatusID.BrinkOfDeath, StatusID.Weakness);
 
     public bool isPotReady => (Poterchoice == Potchoice.WithOthers && isPartyMedicated) || (Poterchoice == Potchoice.Q2M && IsWithinFirst15SecondsOfEvenMinute()) || (Poterchoice == Potchoice.Allday);
 
@@ -512,7 +512,7 @@ public sealed class BLM_Gamma : BlackMageRotation
         }
         if (nextGCD.IsTheSameTo(true, BlizzardIiiPvE))
         {
-            if (!NextGCDisInstant && CanMakeInstant)
+            if (!NextGCDisInstant && CanMakeInstant && InCombat)
             {
                 if (isInOpener)
                 {
@@ -552,7 +552,7 @@ public sealed class BLM_Gamma : BlackMageRotation
         }
 
         #endregion
-        if (nextGCD.IsTheSameTo(true, FlarePvE) && isInOpener && Openerchoice == Openchoice.AltFlare)
+        if (nextGCD.IsTheSameTo(true, FlarePvE) && isInOpener && Openerchoice == Openchoice.AltFlare && InCombat)
         {
             if (!NextGCDisInstant && CanMakeInstant)
             {
@@ -571,7 +571,7 @@ public sealed class BLM_Gamma : BlackMageRotation
                 {
                     if (nextGCD.IsTheSameTo(true, FlarePvE) && ThunderBuffMoreThan10 && !willHave2PolyglotWithin6GCDs) //checking if we won't need to refresh thunder AND we wont have foul after freeze (6gcd's)
                     {
-                        if (!NextGCDisInstant && TriplecastPvE.Cooldown.CurrentCharges > 0)
+                        if (!NextGCDisInstant && TriplecastPvE.Cooldown.CurrentCharges > 0 && InCombat)
                         {
                             if (TriplecastPvE.CanUse(out act, usedUp: true)) return true;
                         }
@@ -850,7 +850,7 @@ public sealed class BLM_Gamma : BlackMageRotation
                 }
 
                 
-                if (InCombat && IsMoving && !NextGCDisInstant && HasHostilesInRange && NextAbilityToNextGCD < 0.1)
+                if (InCombat && IsMoving && !NextGCDisInstant && HasHostilesInRange && NextAbilityToNextGCD < 0.5)
                 {
                     if (PolyglotStacks > 0)
                     {
